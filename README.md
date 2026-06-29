@@ -3,7 +3,8 @@
 
 ## Grupo
 ### Integrantes
-* -	50715 - Felicevich, Mirko 
+* -	50715 - Felicevich, Mirko
+  -	42062 - Coria, Lautaro
 
 
 ### Repositorios
