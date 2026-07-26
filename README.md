@@ -14,31 +14,35 @@
 
 ## Tema
 ### Descripción
-El proyecto consiste en desarrollar un sistema web de gestión de stock para una tienda gastronomica con 3 sucursales. Permite a los administradores registrar productos e ingredientes, cargar ventas, ingresos de mercadería y elaboraciones internas. Los empleados pueden consultar el stock disponible en tiempo real desde cualquier dispositivo y registrar ventas y elaboraciones internas. El sistema centraliza la información de las tres sucursales, permitiendo al dueño tener visibilidad global del negocio desde cualquier lugar.
+El proyecto consiste en desarrollar un sistema de gestión de stock para una tienda gastronómica con 3 sucursales, disponible en dos interfaces: una aplicación de escritorio para la operación administrativa en cada local, y una aplicación web para consulta y carga desde cualquier dispositivo.
+
+El acceso requiere autenticación, y las funcionalidades disponibles dependen del tipo de usuario. Los administradores registran productos e ingredientes, definen recetas, cargan ingresos de mercadería, ventas y elaboraciones internas, y administran usuarios y sucursales. Los empleados tienen acceso restringido: consultan el stock disponible actualizado y registran ventas y elaboraciones internas, sin poder modificar catálogos ni precios.
+
+El sistema centraliza la información de las tres sucursales y ofrece reportes de gestión —entre ellos ventas por período y productos/ingredientes bajo stock mínimo, con visualización gráfica— que le permiten al dueño tener visibilidad global del negocio desde cualquier lugar.
 
 ### Modelo
 [![Modelo-Dominio-Tp-DSW.png](https://i.postimg.cc/4325L0jw/DSW1-drawio-(1).png)](https://postimg.cc/rdWxzfVt)
 
 
 
-## Alcance Funcional 
+## Alcance Funcional
 
 ### Alcance Mínimo
 
 Regularidad:
 |Req|Detalle|
 |:-|:-|
-|CRUD simple|1. CRUD Producto<br>2. CRUD Ingrediente<br>3. CRUD Usuario|
-|CRUD dependiente|1. CRUD SumaProducto {depende de} CRUD Producto<br>2. CRUD Compra {depende de}  Usuario/Producto|
-|Listado<br>+<br>detalle| 1.Lista de Productos filtrado por nombre, muestra stock y precio actuales<br> 2.Historial de ingresos de stock por producto
-|CUU/Epic|1. Registrar una venta(descuenta stock y genera detalle de compra)<br>2. Ingresar mercaderia al stock(crea o agrega producto)<br>|
-
+|CRUD simple|1. CRUD Producto<br>2. CRUD Ingrediente<br>3. CRUD Sucursal<br>4. CRUD Usuario|
+|CRUD dependiente|1. CRUD Venta/DetalleVenta *(Maestro/Detalle)* {depende de} Usuario/Sucursal/Producto<br>2. CRUD IngresoProducto {depende de} Producto/Sucursal|
+|Listado<br>+<br>detalle|1. Lista de Productos filtrada por nombre, categoría y bajo stock, muestra stock y precio actuales<br>2. Historial de ingresos de stock por producto|
+|CUU/Epic|1. Login/logout con autorización por tipo de usuario (administrador/empleado)<br>2. Registrar una venta (descuenta stock y genera el detalle de la venta)<br>3. Ingresar mercadería al stock (crea o agrega producto)|
 
 Adicionales para Aprobación:
 |Req|Detalle|
 |:-|:-|
-|CRUD |1. CRUD SumaProducto<br>2. CRUD SumaIngrediente<br>3. CRUD Compra<br>4. CRUD Elaboracion<br>5. CRUD PrecioProducto<br>6. CRUD PrecioIngrediente<br>|
-|CUU/Epic|1. Registrar elaboracion interna(Registra elaboracion + Detalla ingrediente, descuenta ingrediente y suma producto|
+|CRUD|1. CRUD Receta/DetalleReceta *(Maestro/Detalle)*<br>2. CRUD Elaboracion/DetalleElaboracion *(Maestro/Detalle)*<br>3. CRUD IngresoIngrediente<br>4. CRUD PrecioProducto<br>5. CRUD PrecioIngrediente|
+|Reportes|1. Ventas por período y sucursal, con gráfico<br>2. Productos e ingredientes bajo stock mínimo|
+|CUU/Epic|1. Registrar elaboración interna a partir de una receta (registra la elaboración y su detalle de ingredientes, descuenta ingredientes y suma producto terminado)|
 
 ### Alcance Adicional Voluntario
 
@@ -46,7 +50,5 @@ Adicionales para Aprobación:
 
 |Req|Detalle|
 |:-|:-|
-|Listados |1. Reporte de precios de compra de ingredientes y de productos <br>2. lista de elaboraciones filtrada por fecha y sucursal|
-|CUU/Epic|1. Registrar usuario <br>2. Eliminar Usuario <br>3.Notificacion de stock bajo |
-
-
+|Listados|1. Reporte de precios de compra de ingredientes y de productos<br>2. Lista de elaboraciones filtrada por fecha y sucursal|
+|CUU/Epic|1. Registrar y eliminar usuarios con asignación de rol y sucursal<br>2. Notificación de stock bajo<br>3. Comparativa de costo de receta vs. precio de venta del producto|
