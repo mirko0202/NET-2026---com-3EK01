@@ -18,6 +18,9 @@ namespace Application.Services
             var ingrediente = new Ingrediente(0, dto.Nombre, dto.Descripcion,
                                               dto.Unidad, dto.Stock, dto.StockMin);
 
+            if (await ingredienteRepository.NombreExistsAsync(ingrediente.Nombre))
+                throw new InvalidOperationException($"Ya existe un ingrediente con el nombre '{ingrediente.Nombre}'.");
+
             await ingredienteRepository.AddAsync(ingrediente);
 
             return ToDTO(ingrediente);
@@ -27,6 +30,9 @@ namespace Application.Services
         {
             var ingrediente = new Ingrediente(dto.Id, dto.Nombre, dto.Descripcion,
                                               dto.Unidad, dto.Stock, dto.StockMin);
+
+            if (await ingredienteRepository.NombreExistsAsync(ingrediente.Nombre, ingrediente.Id))
+                throw new InvalidOperationException($"Ya existe otro ingrediente con el nombre '{ingrediente.Nombre}'.");
 
             return await ingredienteRepository.UpdateAsync(ingrediente);
         }

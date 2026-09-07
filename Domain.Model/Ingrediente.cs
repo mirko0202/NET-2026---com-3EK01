@@ -22,6 +22,8 @@ namespace Domain.Model
             SetStockMin(stockMin);
         }
 
+        private Ingrediente() { }
+
         public void SetId(int id)
         {
             if (id < 0)

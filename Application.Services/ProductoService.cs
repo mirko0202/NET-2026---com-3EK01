@@ -18,6 +18,9 @@ namespace Application.Services
             var producto = new Producto(0, dto.Nombre, dto.Descripcion,
                                         dto.Unidad, dto.Stock, dto.StockMin);
 
+            if (await productoRepository.NombreExistsAsync(producto.Nombre))
+                throw new InvalidOperationException($"Ya existe un producto con el nombre '{producto.Nombre}'.");
+
             await productoRepository.AddAsync(producto);
 
             return ToDTO(producto);
@@ -27,6 +30,9 @@ namespace Application.Services
         {
             var producto = new Producto(dto.Id, dto.Nombre, dto.Descripcion,
                                         dto.Unidad, dto.Stock, dto.StockMin);
+
+            if (await productoRepository.NombreExistsAsync(producto.Nombre, producto.Id))
+                throw new InvalidOperationException($"Ya existe otro producto con el nombre '{producto.Nombre}'.");
 
             return await productoRepository.UpdateAsync(producto);
         }

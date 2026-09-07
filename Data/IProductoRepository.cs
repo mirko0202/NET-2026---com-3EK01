@@ -10,5 +10,6 @@ namespace Data
         Task AddAsync(Producto producto);
         Task<bool> UpdateAsync(Producto producto);
         Task<bool> DeleteAsync(int id);
+        Task<bool> NombreExistsAsync(string nombre, int? excluirId = null);
     }
 }

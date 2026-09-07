@@ -48,6 +48,10 @@ namespace WebAPI
                 {
                     return Results.BadRequest(new { error = ex.Message });
                 }
+                catch (InvalidOperationException ex)
+                {
+                    return Results.BadRequest(new { error = ex.Message });
+                }
             })
             .WithName("AddProducto")
             .Produces<ProductoDTO>(StatusCodes.Status201Created)
@@ -62,6 +66,10 @@ namespace WebAPI
                     return found ? Results.NoContent() : Results.NotFound();
                 }
                 catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new { error = ex.Message });
+                }
+                catch (InvalidOperationException ex)
                 {
                     return Results.BadRequest(new { error = ex.Message });
                 }
