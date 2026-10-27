@@ -1,0 +1,103 @@
+@page "/login"
+@layout LoginLayout
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Iniciar sesión - Gestión de Stock</PageTitle>
+
+<div class="card shadow login-card">
+    <div class="card-body p-4">
+        <h3 class="mb-1">Gestión de Stock</h3>
+        <p class="text-muted mb-4">Ingrese sus credenciales para continuar</p>
+
+        @if (Expirada)
+        {
+            <div class="alert alert-info py-2">@BaseApiClient.MensajeSesionExpirada</div>
+        }
+
+        <EditForm Model="modelo" OnSubmit="IngresarAsync">
+            <div class="mb-3">
+                <label class="form-label" for="usuario">Usuario</label>
+                <InputText id="usuario" class="@ClaseCampo(modelo.Username)" @bind-Value="modelo.Username"
+                           autocomplete="username" maxlength="50" />
+                <div class="invalid-feedback">El usuario es requerido</div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="password">Contraseña</label>
+                <InputText id="password" type="password" class="@ClaseCampo(modelo.Password)"
+                           @bind-Value="modelo.Password" autocomplete="current-password" maxlength="100" />
+                <div class="invalid-feedback">La contraseña es requerida</div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(error))
+            {
+                <div class="alert alert-danger py-2">@error</div>
+            }
+
+            <button type="submit" class="btn btn-primary w-100" disabled="@ingresando">
+                @if (ingresando)
+                {
+                    <span class="spinner-border spinner-border-sm me-2"></span>
+                }
+                Iniciar sesión
+            </button>
+        </EditForm>
+
+        <p class="text-muted small mt-3 mb-0">Datos de prueba: admin / admin123 · empleado / empleado123</p>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery]
+    public bool Expirada { get; set; }
+
+    private readonly LoginRequest modelo = new();
+    private bool intentoIngresar;
+    private bool ingresando;
+    private string? error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (await AuthService.IsAuthenticatedAsync())
+            Navigation.NavigateTo("");
+    }
+
+    private string ClaseCampo(string valor) =>
+        intentoIngresar && string.IsNullOrWhiteSpace(valor) ? "form-control is-invalid" : "form-control";
+
+    private async Task IngresarAsync()
+    {
+        intentoIngresar = true;
+        error = null;
+
+        if (string.IsNullOrWhiteSpace(modelo.Username) || string.IsNullOrWhiteSpace(modelo.Password))
+            return;
+
+        try
+        {
+            ingresando = true;
+
+            var respuesta = await AuthService.LoginAsync(modelo.Username.Trim(), modelo.Password);
+
+            if (respuesta.Exito)
+            {
+                Navigation.NavigateTo("");
+            }
+            else
+            {
+                error = respuesta.Mensaje;
+                modelo.Password = string.Empty;
+                intentoIngresar = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+        finally
+        {
+            ingresando = false;
+        }
+    }
+}

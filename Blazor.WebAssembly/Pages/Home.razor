@@ -1,0 +1,91 @@
+@page "/"
+@inherits PaginaAutenticada
+
+<PageTitle>Inicio - Gestión de Stock</PageTitle>
+
+@if (Usuario != null)
+{
+    <h1 class="mb-1">Bienvenido, @Usuario.NombreCompleto</h1>
+    <p class="lead text-muted">Sistema de gestión de stock para tienda gastronómica</p>
+
+    <div class="alert alert-light border">
+        @if (EsAdministrador)
+        {
+            <text><strong>Perfil Administrador:</strong> consulta y modifica productos e ingredientes.</text>
+        }
+        else
+        {
+            <text><strong>Perfil Empleado:</strong> consulta el stock de productos e ingredientes.</text>
+        }
+    </div>
+
+    @if (!string.IsNullOrEmpty(error))
+    {
+        <div class="alert alert-danger">@error</div>
+    }
+
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Productos</h5>
+                    <p class="card-text text-muted">
+                        @if (productosBajoStock == null)
+                        {
+                            <text>Cargando...</text>
+                        }
+                        else
+                        {
+                            <text>@productosBajoStock de @productosTotales por debajo del stock mínimo.</text>
+                        }
+                    </p>
+                    <a class="btn btn-primary" href="productos">Ver productos</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Ingredientes</h5>
+                    <p class="card-text text-muted">
+                        @if (ingredientesBajoStock == null)
+                        {
+                            <text>Cargando...</text>
+                        }
+                        else
+                        {
+                            <text>@ingredientesBajoStock de @ingredientesTotales por debajo del stock mínimo.</text>
+                        }
+                    </p>
+                    <a class="btn btn-primary" href="ingredientes">Ver ingredientes</a>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private int? productosTotales;
+    private int? productosBajoStock;
+    private int? ingredientesTotales;
+    private int? ingredientesBajoStock;
+    private string? error;
+
+    protected override async Task OnAutenticadoAsync()
+    {
+        try
+        {
+            var productos = (await ProductoApiClient.GetAllAsync()).ToList();
+            productosTotales = productos.Count;
+            productosBajoStock = productos.Count(p => p.BajoStock);
+
+            var ingredientes = (await IngredienteApiClient.GetAllAsync()).ToList();
+            ingredientesTotales = ingredientes.Count;
+            ingredientesBajoStock = ingredientes.Count(i => i.BajoStock);
+        }
+        catch (Exception ex)
+        {
+            error = MensajeDeError(ex);
+        }
+    }
+}

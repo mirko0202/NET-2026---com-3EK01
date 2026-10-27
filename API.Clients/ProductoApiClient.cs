@@ -9,14 +9,12 @@ namespace API.Clients
         {
             try
             {
-                using var client = CreateHttpClient();
+                using var client = await CreateAuthenticatedHttpClientAsync();
                 var response = await client.GetAsync($"productos/{id}");
+                await VerificarRespuestaAsync(response);
 
-                if (!response.IsSuccessStatusCode)
-                    throw new Exception($"Error al obtener el producto {id}. {await LeerMensajeDeErrorAsync(response)}");
-
-                var producto = await response.Content.ReadFromJsonAsync<ProductoDTO>();
-                return producto ?? throw new Exception($"No se recibieron datos del producto {id}.");
+                return await response.Content.ReadFromJsonAsync<ProductoDTO>()
+                       ?? throw new Exception($"No se recibieron datos del producto {id}.");
             }
             catch (HttpRequestException ex)
             {
@@ -32,11 +30,9 @@ namespace API.Clients
         {
             try
             {
-                using var client = CreateHttpClient();
+                using var client = await CreateAuthenticatedHttpClientAsync();
                 var response = await client.GetAsync("productos");
-
-                if (!response.IsSuccessStatusCode)
-                    throw new Exception($"Error al obtener los productos. {await LeerMensajeDeErrorAsync(response)}");
+                await VerificarRespuestaAsync(response);
 
                 return await response.Content.ReadFromJsonAsync<IEnumerable<ProductoDTO>>()
                        ?? new List<ProductoDTO>();
@@ -55,16 +51,14 @@ namespace API.Clients
         {
             try
             {
-                using var client = CreateHttpClient();
+                using var client = await CreateAuthenticatedHttpClientAsync();
 
                 var query = $"productos/criteria?bajoStock={(bajoStock ? "true" : "false")}";
                 if (!string.IsNullOrWhiteSpace(texto))
                     query += $"&texto={Uri.EscapeDataString(texto)}";
 
                 var response = await client.GetAsync(query);
-
-                if (!response.IsSuccessStatusCode)
-                    throw new Exception($"Error al buscar productos. {await LeerMensajeDeErrorAsync(response)}");
+                await VerificarRespuestaAsync(response);
 
                 return await response.Content.ReadFromJsonAsync<IEnumerable<ProductoDTO>>()
                        ?? new List<ProductoDTO>();
@@ -83,11 +77,9 @@ namespace API.Clients
         {
             try
             {
-                using var client = CreateHttpClient();
+                using var client = await CreateAuthenticatedHttpClientAsync();
                 var response = await client.PostAsJsonAsync("productos", producto);
-
-                if (!response.IsSuccessStatusCode)
-                    throw new Exception(await LeerMensajeDeErrorAsync(response));
+                await VerificarRespuestaAsync(response);
             }
             catch (HttpRequestException ex)
             {
@@ -103,11 +95,9 @@ namespace API.Clients
         {
             try
             {
-                using var client = CreateHttpClient();
+                using var client = await CreateAuthenticatedHttpClientAsync();
                 var response = await client.PutAsJsonAsync("productos", producto);
-
-                if (!response.IsSuccessStatusCode)
-                    throw new Exception(await LeerMensajeDeErrorAsync(response));
+                await VerificarRespuestaAsync(response);
             }
             catch (HttpRequestException ex)
             {
@@ -123,11 +113,9 @@ namespace API.Clients
         {
             try
             {
-                using var client = CreateHttpClient();
+                using var client = await CreateAuthenticatedHttpClientAsync();
                 var response = await client.DeleteAsync($"productos/{id}");
-
-                if (!response.IsSuccessStatusCode)
-                    throw new Exception(await LeerMensajeDeErrorAsync(response));
+                await VerificarRespuestaAsync(response);
             }
             catch (HttpRequestException ex)
             {

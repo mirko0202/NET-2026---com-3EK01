@@ -64,6 +64,10 @@ namespace WindowsForms
                 DialogResult = DialogResult.OK;
                 Close();
             }
+            catch (UnauthorizedAccessException)
+            {
+                Close();
+            }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message, "No se pudo guardar el ingrediente",

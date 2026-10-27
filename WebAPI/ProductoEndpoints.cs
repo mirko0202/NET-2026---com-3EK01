@@ -14,6 +14,7 @@ namespace WebAPI
             })
             .WithName("GetAllProductos")
             .Produces<List<ProductoDTO>>(StatusCodes.Status200OK)
+            .RequireAuthorization()
             .WithOpenApi();
 
             app.MapGet("/productos/{id}", async (int id, IProductoService service) =>
@@ -24,6 +25,7 @@ namespace WebAPI
             .WithName("GetProducto")
             .Produces<ProductoDTO>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound)
+            .RequireAuthorization()
             .WithOpenApi();
 
             app.MapGet("/productos/criteria", async (string? texto, bool? bajoStock,
@@ -35,6 +37,7 @@ namespace WebAPI
             })
             .WithName("GetProductosByCriteria")
             .Produces<List<ProductoDTO>>(StatusCodes.Status200OK)
+            .RequireAuthorization()
             .WithOpenApi();
 
             app.MapPost("/productos", async (ProductoDTO dto, IProductoService service) =>
@@ -46,16 +49,17 @@ namespace WebAPI
                 }
                 catch (ArgumentException ex)
                 {
-                    return Results.BadRequest(new { error = ex.Message });
+                    return Errores.BadRequest(ex);
                 }
                 catch (InvalidOperationException ex)
                 {
-                    return Results.BadRequest(new { error = ex.Message });
+                    return Errores.BadRequest(ex);
                 }
             })
             .WithName("AddProducto")
             .Produces<ProductoDTO>(StatusCodes.Status201Created)
             .Produces(StatusCodes.Status400BadRequest)
+            .RequireAuthorization(Politicas.SoloAdministrador)
             .WithOpenApi();
 
             app.MapPut("/productos", async (ProductoDTO dto, IProductoService service) =>
@@ -67,27 +71,37 @@ namespace WebAPI
                 }
                 catch (ArgumentException ex)
                 {
-                    return Results.BadRequest(new { error = ex.Message });
+                    return Errores.BadRequest(ex);
                 }
                 catch (InvalidOperationException ex)
                 {
-                    return Results.BadRequest(new { error = ex.Message });
+                    return Errores.BadRequest(ex);
                 }
             })
             .WithName("UpdateProducto")
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status404NotFound)
+            .RequireAuthorization(Politicas.SoloAdministrador)
             .WithOpenApi();
 
             app.MapDelete("/productos/{id}", async (int id, IProductoService service) =>
             {
-                var deleted = await service.DeleteAsync(id);
-                return deleted ? Results.NoContent() : Results.NotFound();
+                try
+                {
+                    var deleted = await service.DeleteAsync(id);
+                    return deleted ? Results.NoContent() : Results.NotFound();
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return Errores.BadRequest(ex);
+                }
             })
             .WithName("DeleteProducto")
             .Produces(StatusCodes.Status204NoContent)
+            .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status404NotFound)
+            .RequireAuthorization(Politicas.SoloAdministrador)
             .WithOpenApi();
         }
     }

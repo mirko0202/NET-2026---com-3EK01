@@ -15,9 +15,10 @@ namespace WebAPI
                     : Results.Json(response, statusCode: StatusCodes.Status401Unauthorized);
             })
             .WithName("Login")
-            .WithSummary("Autentica un usuario y devuelve sus datos y rol.")
+            .WithSummary("Autentica un usuario y devuelve el token JWT junto con sus datos y rol.")
             .Produces<LoginResponse>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized)
+            .AllowAnonymous()
             .WithOpenApi();
         }
     }

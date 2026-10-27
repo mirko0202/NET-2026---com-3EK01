@@ -67,5 +67,22 @@ namespace Domain.Model
                 throw new ArgumentException("El stock mínimo no puede ser negativo.", nameof(stockMin));
             StockMin = stockMin;
         }
+
+        public void DescontarStock(int cantidad)
+        {
+            if (cantidad <= 0)
+                throw new ArgumentException("La cantidad a descontar debe ser mayor a 0.", nameof(cantidad));
+            if (cantidad > Stock)
+                throw new InvalidOperationException(
+                    $"Stock insuficiente de '{Nombre}': disponible {Stock}, solicitado {cantidad}.");
+            Stock -= cantidad;
+        }
+
+        public void ReponerStock(int cantidad)
+        {
+            if (cantidad <= 0)
+                throw new ArgumentException("La cantidad a reponer debe ser mayor a 0.", nameof(cantidad));
+            Stock += cantidad;
+        }
     }
 }

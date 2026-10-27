@@ -1,0 +1,201 @@
+@inject NavigationManager Navigation
+
+@if (visible)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" style="background-color: rgba(0,0,0,.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <EditForm Model="ingrediente" OnSubmit="GuardarAsync">
+                    <div class="modal-header">
+                        <h5 class="modal-title">@(modo == FormMode.Add ? "Nuevo ingrediente" : "Modificar ingrediente")</h5>
+                        <button type="button" class="btn-close" @onclick="Cerrar" disabled="@guardando"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        @if (modo == FormMode.Update)
+                        {
+                            <div class="mb-3">
+                                <label class="form-label">Id</label>
+                                <input class="form-control" value="@ingrediente.Id" readonly />
+                            </div>
+                        }
+
+                        <div class="mb-3">
+                            <label class="form-label" for="nombre">Nombre *</label>
+                            <InputText id="nombre" class="@ClaseCampo("Nombre")" @bind-Value="ingrediente.Nombre" maxlength="100" />
+                            <div class="invalid-feedback">@Error("Nombre")</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="descripcion">Descripción</label>
+                            <InputTextArea id="descripcion" class="@ClaseCampo("Descripcion")" rows="2"
+                                           @bind-Value="ingrediente.Descripcion" maxlength="255" />
+                            <div class="invalid-feedback">@Error("Descripcion")</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="unidad">Unidad</label>
+                            <InputText id="unidad" class="@ClaseCampo("Unidad")" @bind-Value="ingrediente.Unidad"
+                                       list="unidades-ingrediente" maxlength="20" />
+                            <datalist id="unidades-ingrediente">
+                                <option value="unidad"></option>
+                                <option value="kg"></option>
+                                <option value="litro"></option>
+                                <option value="docena"></option>
+                                <option value="porción"></option>
+                            </datalist>
+                            <div class="invalid-feedback">@Error("Unidad")</div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <label class="form-label" for="stock">Stock *</label>
+                                <InputNumber id="stock" class="@ClaseCampo("Stock")" @bind-Value="ingrediente.Stock" min="0" />
+                                <div class="invalid-feedback">@Error("Stock")</div>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <label class="form-label" for="stockMin">Stock mínimo *</label>
+                                <InputNumber id="stockMin" class="@ClaseCampo("StockMin")" @bind-Value="ingrediente.StockMin" min="0" />
+                                <div class="invalid-feedback">@Error("StockMin")</div>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(errorServidor))
+                        {
+                            <div class="alert alert-warning mb-0">@errorServidor</div>
+                        }
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="Cerrar" disabled="@guardando">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" disabled="@guardando">
+                            @if (guardando)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2"></span>
+                            }
+                            Guardar
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public EventCallback<string> OnGuardado { get; set; }
+
+    private bool visible;
+    private bool guardando;
+    private FormMode modo;
+    private IngredienteDTO ingrediente = new();
+    private string? errorServidor;
+    private readonly Dictionary<string, string> errores = new();
+
+    public void MostrarAlta()
+    {
+        modo = FormMode.Add;
+        ingrediente = new IngredienteDTO();
+        Abrir();
+    }
+
+    public void MostrarEdicion(IngredienteDTO existente)
+    {
+        modo = FormMode.Update;
+        ingrediente = new IngredienteDTO
+        {
+            Id = existente.Id,
+            Nombre = existente.Nombre,
+            Descripcion = existente.Descripcion,
+            Unidad = existente.Unidad,
+            Stock = existente.Stock,
+            StockMin = existente.StockMin
+        };
+        Abrir();
+    }
+
+    private void Abrir()
+    {
+        errores.Clear();
+        errorServidor = null;
+        visible = true;
+        StateHasChanged();
+    }
+
+    private void Cerrar()
+    {
+        visible = false;
+    }
+
+    private string ClaseCampo(string campo) =>
+        errores.ContainsKey(campo) ? "form-control is-invalid" : "form-control";
+
+    private string? Error(string campo) =>
+        errores.TryGetValue(campo, out var mensaje) ? mensaje : null;
+
+    private bool Validar()
+    {
+        errores.Clear();
+
+        if (string.IsNullOrWhiteSpace(ingrediente.Nombre))
+            errores["Nombre"] = "El nombre es requerido";
+        else if (ingrediente.Nombre.Trim().Length > 100)
+            errores["Nombre"] = "El nombre no puede superar los 100 caracteres";
+
+        if (ingrediente.Descripcion?.Length > 255)
+            errores["Descripcion"] = "La descripción no puede superar los 255 caracteres";
+
+        if (ingrediente.Unidad?.Trim().Length > 20)
+            errores["Unidad"] = "La unidad no puede superar los 20 caracteres";
+
+        if (ingrediente.Stock < 0)
+            errores["Stock"] = "El stock no puede ser negativo";
+
+        if (ingrediente.StockMin < 0)
+            errores["StockMin"] = "El stock mínimo no puede ser negativo";
+
+        return errores.Count == 0;
+    }
+
+    private async Task GuardarAsync()
+    {
+        errorServidor = null;
+
+        if (!Validar())
+            return;
+
+        ingrediente.Nombre = ingrediente.Nombre.Trim();
+        ingrediente.Descripcion = string.IsNullOrWhiteSpace(ingrediente.Descripcion) ? null : ingrediente.Descripcion.Trim();
+        ingrediente.Unidad = string.IsNullOrWhiteSpace(ingrediente.Unidad) ? null : ingrediente.Unidad.Trim();
+
+        try
+        {
+            guardando = true;
+
+            if (modo == FormMode.Update)
+                await IngredienteApiClient.UpdateAsync(ingrediente);
+            else
+                await IngredienteApiClient.AddAsync(ingrediente);
+
+            visible = false;
+
+            await OnGuardado.InvokeAsync(modo == FormMode.Add
+                ? $"Ingrediente \"{ingrediente.Nombre}\" creado correctamente."
+                : $"Ingrediente \"{ingrediente.Nombre}\" actualizado correctamente.");
+        }
+        catch (UnauthorizedAccessException)
+        {
+            visible = false;
+            Navigation.NavigateTo("login?expirada=true");
+        }
+        catch (Exception ex)
+        {
+            errorServidor = ex.Message;
+        }
+        finally
+        {
+            guardando = false;
+        }
+    }
+}

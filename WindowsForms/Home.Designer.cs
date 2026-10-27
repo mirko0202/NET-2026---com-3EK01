@@ -21,6 +21,7 @@ namespace WindowsForms
             gestionToolStripMenuItem = new ToolStripMenuItem();
             productosToolStripMenuItem = new ToolStripMenuItem();
             ingredientesToolStripMenuItem = new ToolStripMenuItem();
+            ventasToolStripMenuItem = new ToolStripMenuItem();
             sesionToolStripMenuItem = new ToolStripMenuItem();
             cerrarSesionToolStripMenuItem = new ToolStripMenuItem();
             separadorSesionToolStripMenuItem = new ToolStripSeparator();
@@ -44,7 +45,7 @@ namespace WindowsForms
             //
             // gestionToolStripMenuItem
             //
-            gestionToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { productosToolStripMenuItem, ingredientesToolStripMenuItem });
+            gestionToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { productosToolStripMenuItem, ingredientesToolStripMenuItem, ventasToolStripMenuItem });
             gestionToolStripMenuItem.Name = "gestionToolStripMenuItem";
             gestionToolStripMenuItem.Size = new Size(59, 20);
             gestionToolStripMenuItem.Text = "&Gestión";
@@ -62,6 +63,13 @@ namespace WindowsForms
             ingredientesToolStripMenuItem.Size = new Size(180, 22);
             ingredientesToolStripMenuItem.Text = "&Ingredientes";
             ingredientesToolStripMenuItem.Click += ingredientesToolStripMenuItem_Click;
+            //
+            // ventasToolStripMenuItem
+            //
+            ventasToolStripMenuItem.Name = "ventasToolStripMenuItem";
+            ventasToolStripMenuItem.Size = new Size(180, 22);
+            ventasToolStripMenuItem.Text = "&Ventas";
+            ventasToolStripMenuItem.Click += ventasToolStripMenuItem_Click;
             //
             // sesionToolStripMenuItem
             //
@@ -162,6 +170,7 @@ namespace WindowsForms
         private ToolStripMenuItem gestionToolStripMenuItem;
         private ToolStripMenuItem productosToolStripMenuItem;
         private ToolStripMenuItem ingredientesToolStripMenuItem;
+        private ToolStripMenuItem ventasToolStripMenuItem;
         private ToolStripMenuItem sesionToolStripMenuItem;
         private ToolStripMenuItem cerrarSesionToolStripMenuItem;
         private ToolStripSeparator separadorSesionToolStripMenuItem;

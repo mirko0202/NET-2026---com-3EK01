@@ -5,6 +5,8 @@ namespace WindowsForms
 {
     public partial class IngredienteLista : Form
     {
+        private bool esAdministrador;
+
         public IngredienteLista()
         {
             InitializeComponent();
@@ -74,19 +76,18 @@ namespace WindowsForms
 
         private async void IngredienteLista_Load(object sender, EventArgs e)
         {
+            esAdministrador = await AuthServiceProvider.Instance.EsAdministradorAsync();
             AplicarAutorizacion();
             await CargarAsync();
         }
 
         private void AplicarAutorizacion()
         {
-            var esAdmin = SesionActual.EsAdministrador;
+            agregarButton.Visible = esAdministrador;
+            actualizarButton.Visible = esAdministrador;
+            eliminarButton.Visible = esAdministrador;
 
-            agregarButton.Visible = esAdmin;
-            actualizarButton.Visible = esAdmin;
-            eliminarButton.Visible = esAdmin;
-
-            Text = esAdmin ? "Ingredientes" : "Ingredientes (solo consulta)";
+            Text = esAdministrador ? "Ingredientes" : "Ingredientes (solo consulta)";
         }
 
         private async Task CargarAsync()
@@ -104,6 +105,10 @@ namespace WindowsForms
                 resultadosLabel.Text = lista.Count == 1
                     ? "1 ingrediente"
                     : $"{lista.Count} ingredientes";
+            }
+            catch (UnauthorizedAccessException)
+            {
+                Close();
             }
             catch (Exception ex)
             {
@@ -163,6 +168,11 @@ namespace WindowsForms
                 using var detalle = new IngredienteDetalle(FormMode.Update, ingrediente);
                 detalle.ShowDialog();
             }
+            catch (UnauthorizedAccessException)
+            {
+                Close();
+                return;
+            }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message, "Error al abrir el ingrediente",
@@ -198,6 +208,11 @@ namespace WindowsForms
                 DeshabilitarControles();
                 await IngredienteApiClient.DeleteAsync(ingrediente.Id);
             }
+            catch (UnauthorizedAccessException)
+            {
+                Close();
+                return;
+            }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message, "Error al eliminar el ingrediente",
@@ -230,11 +245,10 @@ namespace WindowsForms
             ingredientesDataGridView.Enabled = true;
 
             var hayFilas = ingredientesDataGridView.Rows.Count > 0;
-            var esAdmin = SesionActual.EsAdministrador;
 
-            agregarButton.Enabled = esAdmin;
-            actualizarButton.Enabled = esAdmin && hayFilas;
-            eliminarButton.Enabled = esAdmin && hayFilas;
+            agregarButton.Enabled = esAdministrador;
+            actualizarButton.Enabled = esAdministrador && hayFilas;
+            eliminarButton.Enabled = esAdministrador && hayFilas;
 
             Cursor = Cursors.Default;
         }

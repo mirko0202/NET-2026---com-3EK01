@@ -104,5 +104,10 @@ namespace Data
 
             return await query.AnyAsync();
         }
+
+        public async Task<bool> TieneVentasAsync(int id)
+        {
+            return await context.DetallesVenta.AnyAsync(d => d.ProductoId == id);
+        }
     }
 }

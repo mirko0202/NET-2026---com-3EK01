@@ -1,0 +1,39 @@
+<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">Gestión de Stock</a>
+        <button title="Menú de navegación" class="navbar-toggler" @onclick="AlternarMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </div>
+</div>
+
+<div class="@ClaseMenu nav-scrollable" @onclick="AlternarMenu">
+    <nav class="flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Inicio
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="productos">
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Productos
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="ingredientes">
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Ingredientes
+            </NavLink>
+        </div>
+    </nav>
+</div>
+
+@code {
+    private bool menuColapsado = true;
+
+    private string? ClaseMenu => menuColapsado ? "collapse" : null;
+
+    private void AlternarMenu()
+    {
+        menuColapsado = !menuColapsado;
+    }
+}

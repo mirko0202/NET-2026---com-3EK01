@@ -9,14 +9,12 @@ namespace API.Clients
         {
             try
             {
-                using var client = CreateHttpClient();
+                using var client = await CreateAuthenticatedHttpClientAsync();
                 var response = await client.GetAsync($"ingredientes/{id}");
+                await VerificarRespuestaAsync(response);
 
-                if (!response.IsSuccessStatusCode)
-                    throw new Exception($"Error al obtener el ingrediente {id}. {await LeerMensajeDeErrorAsync(response)}");
-
-                var ingrediente = await response.Content.ReadFromJsonAsync<IngredienteDTO>();
-                return ingrediente ?? throw new Exception($"No se recibieron datos del ingrediente {id}.");
+                return await response.Content.ReadFromJsonAsync<IngredienteDTO>()
+                       ?? throw new Exception($"No se recibieron datos del ingrediente {id}.");
             }
             catch (HttpRequestException ex)
             {
@@ -32,11 +30,9 @@ namespace API.Clients
         {
             try
             {
-                using var client = CreateHttpClient();
+                using var client = await CreateAuthenticatedHttpClientAsync();
                 var response = await client.GetAsync("ingredientes");
-
-                if (!response.IsSuccessStatusCode)
-                    throw new Exception($"Error al obtener los ingredientes. {await LeerMensajeDeErrorAsync(response)}");
+                await VerificarRespuestaAsync(response);
 
                 return await response.Content.ReadFromJsonAsync<IEnumerable<IngredienteDTO>>()
                        ?? new List<IngredienteDTO>();
@@ -55,11 +51,9 @@ namespace API.Clients
         {
             try
             {
-                using var client = CreateHttpClient();
+                using var client = await CreateAuthenticatedHttpClientAsync();
                 var response = await client.PostAsJsonAsync("ingredientes", ingrediente);
-
-                if (!response.IsSuccessStatusCode)
-                    throw new Exception(await LeerMensajeDeErrorAsync(response));
+                await VerificarRespuestaAsync(response);
             }
             catch (HttpRequestException ex)
             {
@@ -75,11 +69,9 @@ namespace API.Clients
         {
             try
             {
-                using var client = CreateHttpClient();
+                using var client = await CreateAuthenticatedHttpClientAsync();
                 var response = await client.PutAsJsonAsync("ingredientes", ingrediente);
-
-                if (!response.IsSuccessStatusCode)
-                    throw new Exception(await LeerMensajeDeErrorAsync(response));
+                await VerificarRespuestaAsync(response);
             }
             catch (HttpRequestException ex)
             {
@@ -95,11 +87,9 @@ namespace API.Clients
         {
             try
             {
-                using var client = CreateHttpClient();
+                using var client = await CreateAuthenticatedHttpClientAsync();
                 var response = await client.DeleteAsync($"ingredientes/{id}");
-
-                if (!response.IsSuccessStatusCode)
-                    throw new Exception(await LeerMensajeDeErrorAsync(response));
+                await VerificarRespuestaAsync(response);
             }
             catch (HttpRequestException ex)
             {

@@ -18,12 +18,11 @@ namespace WindowsForms
             {
                 DeshabilitarControles();
 
-                var login = await AuthApiClient.LoginAsync(
+                var login = await AuthServiceProvider.Instance.LoginAsync(
                     usuarioTextBox.Text.Trim(), passwordTextBox.Text);
 
-                if (login.Exito && login.Usuario != null)
+                if (login.Exito)
                 {
-                    SesionActual.Iniciar(login.Usuario);
                     DialogResult = DialogResult.OK;
                     Close();
                 }

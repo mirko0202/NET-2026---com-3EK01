@@ -1,0 +1,56 @@
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+        <div class="top-row px-4">
+            @if (usuario != null)
+            {
+                <span class="text-muted me-3">
+                    @usuario.NombreCompleto · <strong>@usuario.Rol</strong>
+                </span>
+                <button class="btn btn-outline-secondary btn-sm" @onclick="CerrarSesionAsync">Cerrar sesión</button>
+            }
+        </div>
+
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+</div>
+
+@code {
+    private UsuarioDTO? usuario;
+
+    protected override async Task OnInitializedAsync()
+    {
+        AuthService.AuthenticationStateChanged += OnCambioDeSesion;
+        usuario = await AuthService.GetUsuarioAsync();
+    }
+
+    private void OnCambioDeSesion(bool autenticado)
+    {
+        _ = InvokeAsync(async () =>
+        {
+            usuario = autenticado ? await AuthService.GetUsuarioAsync() : null;
+            StateHasChanged();
+        });
+    }
+
+    private async Task CerrarSesionAsync()
+    {
+        await AuthService.LogoutAsync();
+        Navigation.NavigateTo("login");
+    }
+
+    public void Dispose()
+    {
+        AuthService.AuthenticationStateChanged -= OnCambioDeSesion;
+    }
+}

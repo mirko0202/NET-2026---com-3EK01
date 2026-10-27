@@ -1,0 +1,174 @@
+@page "/ingredientes"
+@inherits PaginaAutenticada
+@inject IJSRuntime JS
+
+<PageTitle>Ingredientes - Gestión de Stock</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">
+        Ingredientes
+        @if (!EsAdministrador)
+        {
+            <small class="text-muted fs-6">(solo consulta)</small>
+        }
+    </h3>
+    @if (EsAdministrador)
+    {
+        <button class="btn btn-primary" @onclick="() => modal.MostrarAlta()">Agregar ingrediente</button>
+    }
+</div>
+
+@if (!string.IsNullOrEmpty(mensajeExito))
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        @mensajeExito
+        <button type="button" class="btn-close" @onclick="() => mensajeExito = null"></button>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(mensajeError))
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        @mensajeError
+        <button type="button" class="btn-close" @onclick="() => mensajeError = null"></button>
+    </div>
+}
+
+@if (cargando)
+{
+    <div class="d-flex justify-content-center my-4">
+        <div class="spinner-border" role="status"><span class="visually-hidden">Cargando...</span></div>
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Id</th>
+                    <th>Nombre</th>
+                    <th>Descripción</th>
+                    <th>Unidad</th>
+                    <th class="text-end">Stock</th>
+                    <th class="text-end">Stock mín.</th>
+                    <th>Estado</th>
+                    @if (EsAdministrador)
+                    {
+                        <th></th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var ingrediente in ingredientes)
+                {
+                    <tr class="@(ingrediente.BajoStock ? "table-danger" : null)">
+                        <td>@ingrediente.Id</td>
+                        <td>@ingrediente.Nombre</td>
+                        <td>@ingrediente.Descripcion</td>
+                        <td>@ingrediente.Unidad</td>
+                        <td class="text-end">@ingrediente.Stock</td>
+                        <td class="text-end">@ingrediente.StockMin</td>
+                        <td>
+                            @if (ingrediente.BajoStock)
+                            {
+                                <span class="badge bg-danger">Bajo stock</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success">OK</span>
+                            }
+                        </td>
+                        @if (EsAdministrador)
+                        {
+                            <td class="text-end text-nowrap">
+                                <button class="btn btn-sm btn-outline-primary me-1" @onclick="() => EditarAsync(ingrediente)">Editar</button>
+                                <button class="btn btn-sm btn-outline-danger" @onclick="() => EliminarAsync(ingrediente)">Eliminar</button>
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <p class="text-muted">
+        @(ingredientes.Count == 1 ? "1 ingrediente" : $"{ingredientes.Count} ingredientes")
+    </p>
+}
+
+<IngredienteModal @ref="modal" OnGuardado="AlGuardarAsync" />
+
+@code {
+    private List<IngredienteDTO> ingredientes = new();
+    private IngredienteModal modal = default!;
+    private bool cargando = true;
+    private string? mensajeExito;
+    private string? mensajeError;
+
+    protected override async Task OnAutenticadoAsync()
+    {
+        await CargarAsync();
+    }
+
+    private async Task CargarAsync()
+    {
+        try
+        {
+            cargando = true;
+            ingredientes = (await IngredienteApiClient.GetAllAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            mensajeError = MensajeDeError(ex);
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private async Task EditarAsync(IngredienteDTO seleccionado)
+    {
+        try
+        {
+            mensajeError = null;
+            mensajeExito = null;
+            var ingrediente = await IngredienteApiClient.GetAsync(seleccionado.Id);
+            modal.MostrarEdicion(ingrediente);
+        }
+        catch (Exception ex)
+        {
+            mensajeError = MensajeDeError(ex);
+        }
+    }
+
+    private async Task EliminarAsync(IngredienteDTO ingrediente)
+    {
+        var confirmar = await JS.InvokeAsync<bool>("confirm",
+            $"¿Está seguro que desea eliminar el ingrediente \"{ingrediente.Nombre}\"?");
+
+        if (!confirmar)
+            return;
+
+        try
+        {
+            mensajeError = null;
+            mensajeExito = null;
+            await IngredienteApiClient.DeleteAsync(ingrediente.Id);
+            mensajeExito = $"Ingrediente \"{ingrediente.Nombre}\" eliminado.";
+            await CargarAsync();
+        }
+        catch (Exception ex)
+        {
+            mensajeError = MensajeDeError(ex);
+        }
+    }
+
+    private async Task AlGuardarAsync(string mensaje)
+    {
+        mensajeError = null;
+        mensajeExito = mensaje;
+        await CargarAsync();
+    }
+}

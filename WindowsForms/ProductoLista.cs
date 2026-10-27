@@ -5,6 +5,8 @@ namespace WindowsForms
 {
     public partial class ProductoLista : Form
     {
+        private bool esAdministrador;
+
         public ProductoLista()
         {
             InitializeComponent();
@@ -74,19 +76,18 @@ namespace WindowsForms
 
         private async void ProductoLista_Load(object sender, EventArgs e)
         {
+            esAdministrador = await AuthServiceProvider.Instance.EsAdministradorAsync();
             AplicarAutorizacion();
             await BuscarYCargarAsync();
         }
 
         private void AplicarAutorizacion()
         {
-            var esAdmin = SesionActual.EsAdministrador;
+            agregarButton.Visible = esAdministrador;
+            actualizarButton.Visible = esAdministrador;
+            eliminarButton.Visible = esAdministrador;
 
-            agregarButton.Visible = esAdmin;
-            actualizarButton.Visible = esAdmin;
-            eliminarButton.Visible = esAdmin;
-
-            Text = esAdmin ? "Productos" : "Productos (solo consulta)";
+            Text = esAdministrador ? "Productos" : "Productos (solo consulta)";
         }
 
         private async Task BuscarYCargarAsync()
@@ -113,6 +114,10 @@ namespace WindowsForms
                 resultadosLabel.Text = lista.Count == 1
                     ? "1 producto encontrado"
                     : $"{lista.Count} productos encontrados";
+            }
+            catch (UnauthorizedAccessException)
+            {
+                Close();
             }
             catch (Exception ex)
             {
@@ -193,6 +198,11 @@ namespace WindowsForms
                 using var detalle = new ProductoDetalle(FormMode.Update, producto);
                 detalle.ShowDialog();
             }
+            catch (UnauthorizedAccessException)
+            {
+                Close();
+                return;
+            }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message, "Error al abrir el producto",
@@ -228,6 +238,11 @@ namespace WindowsForms
                 DeshabilitarControles();
                 await ProductoApiClient.DeleteAsync(producto.Id);
             }
+            catch (UnauthorizedAccessException)
+            {
+                Close();
+                return;
+            }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message, "Error al eliminar el producto",
@@ -262,11 +277,10 @@ namespace WindowsForms
             productosDataGridView.Enabled = true;
 
             var hayFilas = productosDataGridView.Rows.Count > 0;
-            var esAdmin = SesionActual.EsAdministrador;
 
-            agregarButton.Enabled = esAdmin;
-            actualizarButton.Enabled = esAdmin && hayFilas;
-            eliminarButton.Enabled = esAdmin && hayFilas;
+            agregarButton.Enabled = esAdministrador;
+            actualizarButton.Enabled = esAdministrador && hayFilas;
+            eliminarButton.Enabled = esAdministrador && hayFilas;
 
             Cursor = Cursors.Default;
         }

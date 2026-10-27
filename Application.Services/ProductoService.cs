@@ -39,6 +39,9 @@ namespace Application.Services
 
         public async Task<bool> DeleteAsync(int id)
         {
+            if (await productoRepository.TieneVentasAsync(id))
+                throw new InvalidOperationException("No se puede eliminar el producto porque tiene ventas registradas.");
+
             return await productoRepository.DeleteAsync(id);
         }
 

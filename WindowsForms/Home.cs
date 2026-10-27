@@ -11,9 +11,9 @@ namespace WindowsForms
             InitializeComponent();
         }
 
-        private void Home_Load(object sender, EventArgs e)
+        private async void Home_Load(object sender, EventArgs e)
         {
-            var usuario = SesionActual.Usuario;
+            var usuario = await AuthServiceProvider.Instance.GetUsuarioAsync();
             if (usuario == null)
             {
                 Close();
@@ -23,28 +23,50 @@ namespace WindowsForms
             bienvenidaLabel.Text = $"Bienvenido, {usuario.NombreCompleto}";
             usuarioStatusLabel.Text = $"Usuario: {usuario.Username}  |  Rol: {usuario.Rol}";
 
-            AplicarAutorizacion();
+            AplicarAutorizacion(usuario.EsAdministrador);
         }
 
-        private void AplicarAutorizacion()
+        private void AplicarAutorizacion(bool esAdministrador)
         {
-            var esAdmin = SesionActual.EsAdministrador;
-
-            permisosLabel.Text = esAdmin
-                ? "Perfil Administrador: puede consultar y modificar productos e ingredientes."
-                : "Perfil Empleado: solo puede consultar el stock de productos e ingredientes.";
+            permisosLabel.Text = esAdministrador
+                ? "Perfil Administrador: gestiona productos, ingredientes y ventas."
+                : "Perfil Empleado: consulta el stock y registra ventas.";
         }
 
-        private void productosToolStripMenuItem_Click(object sender, EventArgs e)
+        private async void productosToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            using var productos = new ProductoLista();
-            productos.ShowDialog();
+            using (var productos = new ProductoLista())
+                productos.ShowDialog();
+
+            await VerificarSesionAsync();
         }
 
-        private void ingredientesToolStripMenuItem_Click(object sender, EventArgs e)
+        private async void ingredientesToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            using var ingredientes = new IngredienteLista();
-            ingredientes.ShowDialog();
+            using (var ingredientes = new IngredienteLista())
+                ingredientes.ShowDialog();
+
+            await VerificarSesionAsync();
+        }
+
+        private async void ventasToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using (var ventas = new VentaLista())
+                ventas.ShowDialog();
+
+            await VerificarSesionAsync();
+        }
+
+        private async Task VerificarSesionAsync()
+        {
+            if (await AuthServiceProvider.Instance.IsAuthenticatedAsync())
+                return;
+
+            MessageBox.Show(BaseApiClient.MensajeSesionExpirada, "Sesión expirada",
+                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+
+            CerroSesion = true;
+            Close();
         }
 
         private void cerrarSesionToolStripMenuItem_Click(object sender, EventArgs e)

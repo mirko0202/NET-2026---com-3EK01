@@ -10,7 +10,7 @@ namespace API.Clients
         {
             try
             {
-                using var client = CreateHttpClient();
+                using var client = await CreateHttpClientAsync();
                 var request = new LoginRequest { Username = username, Password = password };
 
                 var response = await client.PostAsJsonAsync("auth/login", request);
