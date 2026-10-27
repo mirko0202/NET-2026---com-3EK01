@@ -22,10 +22,14 @@ namespace WindowsForms
             idTextBox = new TextBox();
             nombreLabel = new Label();
             nombreTextBox = new TextBox();
+            categoriaLabel = new Label();
+            categoriaComboBox = new ComboBox();
             descripcionLabel = new Label();
             descripcionTextBox = new TextBox();
             unidadLabel = new Label();
             unidadComboBox = new ComboBox();
+            precioLabel = new Label();
+            precioNumericUpDown = new NumericUpDown();
             stockLabel = new Label();
             stockNumericUpDown = new NumericUpDown();
             stockMinLabel = new Label();
@@ -33,6 +37,7 @@ namespace WindowsForms
             aceptarButton = new Button();
             cancelarButton = new Button();
             errorProvider = new ErrorProvider(components);
+            ((System.ComponentModel.ISupportInitialize)precioNumericUpDown).BeginInit();
             ((System.ComponentModel.ISupportInitialize)stockNumericUpDown).BeginInit();
             ((System.ComponentModel.ISupportInitialize)stockMinNumericUpDown).BeginInit();
             ((System.ComponentModel.ISupportInitialize)errorProvider).BeginInit();
@@ -73,94 +78,132 @@ namespace WindowsForms
             nombreTextBox.Size = new Size(290, 23);
             nombreTextBox.TabIndex = 3;
             //
+            // categoriaLabel
+            //
+            categoriaLabel.AutoSize = true;
+            categoriaLabel.Location = new Point(22, 93);
+            categoriaLabel.Name = "categoriaLabel";
+            categoriaLabel.Size = new Size(58, 15);
+            categoriaLabel.TabIndex = 4;
+            categoriaLabel.Text = "Categoría";
+            //
+            // categoriaComboBox
+            //
+            categoriaComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
+            categoriaComboBox.FormattingEnabled = true;
+            categoriaComboBox.Location = new Point(132, 90);
+            categoriaComboBox.Name = "categoriaComboBox";
+            categoriaComboBox.Size = new Size(200, 23);
+            categoriaComboBox.TabIndex = 5;
+            //
             // descripcionLabel
             //
             descripcionLabel.AutoSize = true;
-            descripcionLabel.Location = new Point(22, 93);
+            descripcionLabel.Location = new Point(22, 128);
             descripcionLabel.Name = "descripcionLabel";
             descripcionLabel.Size = new Size(70, 15);
-            descripcionLabel.TabIndex = 4;
+            descripcionLabel.TabIndex = 6;
             descripcionLabel.Text = "Descripción";
             //
             // descripcionTextBox
             //
-            descripcionTextBox.Location = new Point(132, 90);
+            descripcionTextBox.Location = new Point(132, 125);
             descripcionTextBox.MaxLength = 255;
             descripcionTextBox.Multiline = true;
             descripcionTextBox.Name = "descripcionTextBox";
             descripcionTextBox.ScrollBars = ScrollBars.Vertical;
             descripcionTextBox.Size = new Size(290, 60);
-            descripcionTextBox.TabIndex = 5;
+            descripcionTextBox.TabIndex = 7;
             //
             // unidadLabel
             //
             unidadLabel.AutoSize = true;
-            unidadLabel.Location = new Point(22, 165);
+            unidadLabel.Location = new Point(22, 200);
             unidadLabel.Name = "unidadLabel";
             unidadLabel.Size = new Size(45, 15);
-            unidadLabel.TabIndex = 6;
+            unidadLabel.TabIndex = 8;
             unidadLabel.Text = "Unidad";
             //
             // unidadComboBox
             //
             unidadComboBox.FormattingEnabled = true;
             unidadComboBox.Items.AddRange(new object[] { "unidad", "kg", "litro", "docena", "porción" });
-            unidadComboBox.Location = new Point(132, 162);
+            unidadComboBox.Location = new Point(132, 197);
             unidadComboBox.MaxLength = 20;
             unidadComboBox.Name = "unidadComboBox";
             unidadComboBox.Size = new Size(160, 23);
-            unidadComboBox.TabIndex = 7;
+            unidadComboBox.TabIndex = 9;
+            //
+            // precioLabel
+            //
+            precioLabel.AutoSize = true;
+            precioLabel.Location = new Point(22, 237);
+            precioLabel.Name = "precioLabel";
+            precioLabel.Size = new Size(40, 15);
+            precioLabel.TabIndex = 10;
+            precioLabel.Text = "Precio";
+            //
+            // precioNumericUpDown
+            //
+            precioNumericUpDown.DecimalPlaces = 2;
+            precioNumericUpDown.Increment = new decimal(new int[] { 50, 0, 0, 0 });
+            precioNumericUpDown.Location = new Point(132, 235);
+            precioNumericUpDown.Maximum = new decimal(new int[] { 10000000, 0, 0, 0 });
+            precioNumericUpDown.Name = "precioNumericUpDown";
+            precioNumericUpDown.Size = new Size(160, 23);
+            precioNumericUpDown.TabIndex = 11;
+            precioNumericUpDown.ThousandsSeparator = true;
             //
             // stockLabel
             //
             stockLabel.AutoSize = true;
-            stockLabel.Location = new Point(22, 202);
+            stockLabel.Location = new Point(22, 274);
             stockLabel.Name = "stockLabel";
             stockLabel.Size = new Size(37, 15);
-            stockLabel.TabIndex = 8;
+            stockLabel.TabIndex = 12;
             stockLabel.Text = "Stock";
             //
             // stockNumericUpDown
             //
-            stockNumericUpDown.Location = new Point(132, 200);
+            stockNumericUpDown.Location = new Point(132, 272);
             stockNumericUpDown.Maximum = new decimal(new int[] { 1000000, 0, 0, 0 });
             stockNumericUpDown.Name = "stockNumericUpDown";
             stockNumericUpDown.Size = new Size(120, 23);
-            stockNumericUpDown.TabIndex = 9;
+            stockNumericUpDown.TabIndex = 13;
             //
             // stockMinLabel
             //
             stockMinLabel.AutoSize = true;
-            stockMinLabel.Location = new Point(22, 239);
+            stockMinLabel.Location = new Point(22, 311);
             stockMinLabel.Name = "stockMinLabel";
             stockMinLabel.Size = new Size(75, 15);
-            stockMinLabel.TabIndex = 10;
+            stockMinLabel.TabIndex = 14;
             stockMinLabel.Text = "Stock mínimo";
             //
             // stockMinNumericUpDown
             //
-            stockMinNumericUpDown.Location = new Point(132, 237);
+            stockMinNumericUpDown.Location = new Point(132, 309);
             stockMinNumericUpDown.Maximum = new decimal(new int[] { 1000000, 0, 0, 0 });
             stockMinNumericUpDown.Name = "stockMinNumericUpDown";
             stockMinNumericUpDown.Size = new Size(120, 23);
-            stockMinNumericUpDown.TabIndex = 11;
+            stockMinNumericUpDown.TabIndex = 15;
             //
             // aceptarButton
             //
-            aceptarButton.Location = new Point(302, 285);
+            aceptarButton.Location = new Point(302, 357);
             aceptarButton.Name = "aceptarButton";
             aceptarButton.Size = new Size(120, 32);
-            aceptarButton.TabIndex = 12;
+            aceptarButton.TabIndex = 16;
             aceptarButton.Text = "Aceptar";
             aceptarButton.UseVisualStyleBackColor = true;
             aceptarButton.Click += aceptarButton_Click;
             //
             // cancelarButton
             //
-            cancelarButton.Location = new Point(172, 285);
+            cancelarButton.Location = new Point(172, 357);
             cancelarButton.Name = "cancelarButton";
             cancelarButton.Size = new Size(120, 32);
-            cancelarButton.TabIndex = 13;
+            cancelarButton.TabIndex = 17;
             cancelarButton.Text = "Cancelar";
             cancelarButton.UseVisualStyleBackColor = true;
             cancelarButton.Click += cancelarButton_Click;
@@ -175,17 +218,21 @@ namespace WindowsForms
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             CancelButton = cancelarButton;
-            ClientSize = new Size(460, 335);
+            ClientSize = new Size(460, 407);
             Controls.Add(cancelarButton);
             Controls.Add(aceptarButton);
             Controls.Add(stockMinNumericUpDown);
             Controls.Add(stockMinLabel);
             Controls.Add(stockNumericUpDown);
             Controls.Add(stockLabel);
+            Controls.Add(precioNumericUpDown);
+            Controls.Add(precioLabel);
             Controls.Add(unidadComboBox);
             Controls.Add(unidadLabel);
             Controls.Add(descripcionTextBox);
             Controls.Add(descripcionLabel);
+            Controls.Add(categoriaComboBox);
+            Controls.Add(categoriaLabel);
             Controls.Add(nombreTextBox);
             Controls.Add(nombreLabel);
             Controls.Add(idTextBox);
@@ -196,6 +243,8 @@ namespace WindowsForms
             Name = "ProductoDetalle";
             StartPosition = FormStartPosition.CenterParent;
             Text = "Producto";
+            Load += ProductoDetalle_Load;
+            ((System.ComponentModel.ISupportInitialize)precioNumericUpDown).EndInit();
             ((System.ComponentModel.ISupportInitialize)stockNumericUpDown).EndInit();
             ((System.ComponentModel.ISupportInitialize)stockMinNumericUpDown).EndInit();
             ((System.ComponentModel.ISupportInitialize)errorProvider).EndInit();
@@ -209,10 +258,14 @@ namespace WindowsForms
         private TextBox idTextBox;
         private Label nombreLabel;
         private TextBox nombreTextBox;
+        private Label categoriaLabel;
+        private ComboBox categoriaComboBox;
         private Label descripcionLabel;
         private TextBox descripcionTextBox;
         private Label unidadLabel;
         private ComboBox unidadComboBox;
+        private Label precioLabel;
+        private NumericUpDown precioNumericUpDown;
         private Label stockLabel;
         private NumericUpDown stockNumericUpDown;
         private Label stockMinLabel;

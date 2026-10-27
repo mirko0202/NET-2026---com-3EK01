@@ -10,5 +10,6 @@ namespace Application.Services
         Task<ProductoDTO?> GetAsync(int id);
         Task<IEnumerable<ProductoDTO>> GetAllAsync();
         Task<IEnumerable<ProductoDTO>> GetByCriteriaAsync(ProductoCriteriaDTO criteriaDTO);
+        IEnumerable<CategoriaDTO> GetCategorias();
     }
 }

@@ -1,0 +1,271 @@
+@inject NavigationManager Navigation
+@inject IAuthService AuthService
+
+@if (visible)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" style="background-color: rgba(0,0,0,.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <EditForm Model="ingreso" OnSubmit="GuardarAsync">
+                    <div class="modal-header">
+                        <h5 class="modal-title">@(modo == FormMode.Add ? "Registrar ingreso de mercadería" : $"Modificar ingreso N° {ingreso.Id}")</h5>
+                        <button type="button" class="btn-close" @onclick="Cerrar" disabled="@guardando"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label" for="fecha">Fecha y hora *</label>
+                            <input id="fecha" type="datetime-local" class="@ClaseCampo("FechaHora")"
+                                   @bind="ingreso.FechaHora" @bind:format="yyyy-MM-ddTHH:mm" />
+                            <div class="invalid-feedback">@Error("FechaHora")</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="producto">Producto *</label>
+                            <InputSelect id="producto" class="@ClaseSelect("ProductoId")" @bind-Value="ingreso.ProductoId">
+                                <option value="0">Seleccione el producto...</option>
+                                @foreach (var producto in Productos)
+                                {
+                                    <option value="@producto.Id">@producto.Nombre</option>
+                                }
+                            </InputSelect>
+                            <div class="invalid-feedback">@Error("ProductoId")</div>
+                            @if (ProductoSeleccionado is { } seleccionado)
+                            {
+                                <div class="form-text">
+                                    Stock actual: @seleccionado.Stock.ToString("N0") @seleccionado.Unidad · mínimo @seleccionado.StockMin.ToString("N0")
+                                </div>
+                            }
+                        </div>
+
+                        <div class="row">
+                            <div class="col-7 mb-3">
+                                <label class="form-label" for="sucursal">Sucursal *</label>
+                                <InputSelect id="sucursal" class="@ClaseSelect("SucursalId")" @bind-Value="ingreso.SucursalId">
+                                    <option value="0">Seleccione la sucursal...</option>
+                                    @foreach (var sucursal in Sucursales.Where(s => s.Activa || s.Id == ingreso.SucursalId))
+                                    {
+                                        <option value="@sucursal.Id">@sucursal.Nombre</option>
+                                    }
+                                </InputSelect>
+                                <div class="invalid-feedback">@Error("SucursalId")</div>
+                            </div>
+                            <div class="col-5 mb-3">
+                                <label class="form-label" for="cantidad">Cantidad *</label>
+                                <InputNumber id="cantidad" class="@ClaseCampo("Cantidad")" @bind-Value="ingreso.Cantidad" min="1" max="100000" />
+                                <div class="invalid-feedback">@Error("Cantidad")</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="proveedor">Proveedor *</label>
+                            <InputText id="proveedor" class="@ClaseCampo("Proveedor")" @bind-Value="ingreso.Proveedor"
+                                       list="proveedores-conocidos" maxlength="100" />
+                            <datalist id="proveedores-conocidos">
+                                @foreach (var proveedor in Proveedores)
+                                {
+                                    <option value="@proveedor"></option>
+                                }
+                            </datalist>
+                            <div class="invalid-feedback">@Error("Proveedor")</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="comprobante">Comprobante</label>
+                            <InputText id="comprobante" class="@ClaseCampo("Comprobante")" @bind-Value="ingreso.Comprobante"
+                                       placeholder="Remito o factura (opcional)" maxlength="50" />
+                            <div class="invalid-feedback">@Error("Comprobante")</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="observacion">Observación</label>
+                            <InputTextArea id="observacion" class="@ClaseCampo("Observacion")" rows="2"
+                                           @bind-Value="ingreso.Observacion" maxlength="255" />
+                            <div class="invalid-feedback">@Error("Observacion")</div>
+                        </div>
+
+                        @if (modo == FormMode.Update)
+                        {
+                            <p class="text-muted small mb-2">Registrado por @ingreso.UsuarioNombre</p>
+                        }
+
+                        @if (!string.IsNullOrEmpty(errorServidor))
+                        {
+                            <div class="alert alert-warning mb-0">@errorServidor</div>
+                        }
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="Cerrar" disabled="@guardando">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" disabled="@guardando">
+                            @if (guardando)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2"></span>
+                            }
+                            Guardar
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public EventCallback<string> OnGuardado { get; set; }
+
+    [Parameter]
+    public List<ProductoDTO> Productos { get; set; } = new();
+
+    [Parameter]
+    public List<SucursalDTO> Sucursales { get; set; } = new();
+
+    [Parameter]
+    public List<string> Proveedores { get; set; } = new();
+
+    private bool visible;
+    private bool guardando;
+    private FormMode modo;
+    private IngresoProductoDTO ingreso = new();
+    private string? errorServidor;
+    private readonly Dictionary<string, string> errores = new();
+
+    private ProductoDTO? ProductoSeleccionado => Productos.FirstOrDefault(p => p.Id == ingreso.ProductoId);
+
+    public async Task MostrarAlta()
+    {
+        modo = FormMode.Add;
+
+        var usuario = await AuthService.GetUsuarioAsync();
+        var sucursalPorDefecto = Sucursales.FirstOrDefault(s => s.Activa && s.Id == usuario?.SucursalId);
+
+        ingreso = new IngresoProductoDTO
+        {
+            FechaHora = DateTime.Now,
+            Cantidad = 1,
+            SucursalId = sucursalPorDefecto?.Id ?? 0
+        };
+        Abrir();
+    }
+
+    public void MostrarEdicion(IngresoProductoDTO existente)
+    {
+        modo = FormMode.Update;
+        ingreso = new IngresoProductoDTO
+        {
+            Id = existente.Id,
+            FechaHora = existente.FechaHora,
+            ProductoId = existente.ProductoId,
+            SucursalId = existente.SucursalId,
+            UsuarioId = existente.UsuarioId,
+            UsuarioNombre = existente.UsuarioNombre,
+            Cantidad = existente.Cantidad,
+            Proveedor = existente.Proveedor,
+            Comprobante = existente.Comprobante,
+            Observacion = existente.Observacion
+        };
+        Abrir();
+    }
+
+    private void Abrir()
+    {
+        errores.Clear();
+        errorServidor = null;
+        visible = true;
+        StateHasChanged();
+    }
+
+    private void Cerrar()
+    {
+        visible = false;
+    }
+
+    private string ClaseCampo(string campo) =>
+        errores.ContainsKey(campo) ? "form-control is-invalid" : "form-control";
+
+    private string ClaseSelect(string campo) =>
+        errores.ContainsKey(campo) ? "form-select is-invalid" : "form-select";
+
+    private string? Error(string campo) =>
+        errores.TryGetValue(campo, out var mensaje) ? mensaje : null;
+
+    private bool Validar()
+    {
+        errores.Clear();
+
+        if (ingreso.FechaHora == default)
+            errores["FechaHora"] = "La fecha del ingreso es requerida";
+        else if (ingreso.FechaHora > DateTime.Now)
+            errores["FechaHora"] = "La fecha del ingreso no puede ser futura";
+
+        if (ingreso.ProductoId <= 0)
+            errores["ProductoId"] = "Seleccione el producto que ingresa";
+
+        if (ingreso.SucursalId <= 0)
+            errores["SucursalId"] = "Seleccione la sucursal que recibe la mercadería";
+
+        if (ingreso.Cantidad <= 0)
+            errores["Cantidad"] = "La cantidad debe ser mayor a 0";
+        else if (ingreso.Cantidad > 100_000)
+            errores["Cantidad"] = "No puede superar las 100.000 unidades";
+
+        if (string.IsNullOrWhiteSpace(ingreso.Proveedor))
+            errores["Proveedor"] = "El proveedor es requerido";
+        else if (ingreso.Proveedor.Trim().Length > 100)
+            errores["Proveedor"] = "El proveedor no puede superar los 100 caracteres";
+
+        if (ingreso.Comprobante?.Trim().Length > 50)
+            errores["Comprobante"] = "El comprobante no puede superar los 50 caracteres";
+
+        if (ingreso.Observacion?.Trim().Length > 255)
+            errores["Observacion"] = "La observación no puede superar los 255 caracteres";
+
+        return errores.Count == 0;
+    }
+
+    private async Task GuardarAsync()
+    {
+        errorServidor = null;
+
+        if (!Validar())
+            return;
+
+        ingreso.Proveedor = ingreso.Proveedor.Trim();
+        ingreso.Comprobante = string.IsNullOrWhiteSpace(ingreso.Comprobante) ? null : ingreso.Comprobante.Trim();
+        ingreso.Observacion = string.IsNullOrWhiteSpace(ingreso.Observacion) ? null : ingreso.Observacion.Trim();
+
+        try
+        {
+            guardando = true;
+
+            string mensaje;
+            if (modo == FormMode.Update)
+            {
+                await IngresoProductoApiClient.UpdateAsync(ingreso);
+                mensaje = $"Ingreso N° {ingreso.Id} actualizado correctamente.";
+            }
+            else
+            {
+                var creado = await IngresoProductoApiClient.AddAsync(ingreso);
+                mensaje = $"Ingreso N° {creado.Id} registrado: {creado.Cantidad} {creado.Unidad} de \"{creado.ProductoNombre}\".";
+            }
+
+            visible = false;
+            await OnGuardado.InvokeAsync(mensaje);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            visible = false;
+            Navigation.NavigateTo("login?expirada=true");
+        }
+        catch (Exception ex)
+        {
+            errorServidor = ex.Message;
+        }
+        finally
+        {
+            guardando = false;
+        }
+    }
+}

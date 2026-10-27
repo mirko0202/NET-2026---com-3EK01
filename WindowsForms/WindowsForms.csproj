@@ -14,4 +14,8 @@
     <ProjectReference Include="..\DTOs\DTOs.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="ScottPlot" Version="5.1.59" />
+  </ItemGroup>
+
 </Project>

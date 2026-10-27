@@ -111,3 +111,13 @@ code {
     width: 100%;
     max-width: 420px;
 }
+
+.tabla-maestro {
+    max-height: 420px;
+    overflow-y: auto;
+}
+
+.contenedor-grafico {
+    position: relative;
+    height: 340px;
+}

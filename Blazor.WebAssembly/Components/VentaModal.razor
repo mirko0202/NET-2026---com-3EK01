@@ -1,0 +1,387 @@
+@inject NavigationManager Navigation
+@inject IAuthService AuthService
+
+@if (visible)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" style="background-color: rgba(0,0,0,.5);">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(modo == FormMode.Add ? "Nueva venta" : $"Modificar venta N° {venta.Id}")</h5>
+                    <button type="button" class="btn-close" @onclick="Cerrar" disabled="@guardando"></button>
+                </div>
+
+                <div class="modal-body">
+                    @if (cargandoDatos)
+                    {
+                        <div class="d-flex justify-content-center my-4">
+                            <div class="spinner-border" role="status"><span class="visually-hidden">Cargando...</span></div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Fecha</label>
+                                <input class="form-control" value="@fechaTexto" readonly />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Vendedor</label>
+                                <input class="form-control" value="@vendedor" readonly />
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label" for="sucursal">Sucursal *</label>
+                                <select id="sucursal" class="@(errores.ContainsKey("SucursalId") ? "form-select is-invalid" : "form-select")"
+                                        @bind="venta.SucursalId" @bind:after="LimpiarErrorSucursal">
+                                    <option value="0">Seleccione la sucursal...</option>
+                                    @foreach (var sucursal in sucursales)
+                                    {
+                                        <option value="@sucursal.Id">@sucursal.Nombre</option>
+                                    }
+                                </select>
+                                <div class="invalid-feedback">@Error("SucursalId")</div>
+                            </div>
+                        </div>
+
+                        <h6>Productos vendidos</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th style="width: 120px">Cantidad</th>
+                                        <th style="width: 150px">Precio unitario</th>
+                                        <th class="text-end">Subtotal</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in items)
+                                    {
+                                        var clave = $"Item{item.ProductoId}";
+                                        <tr>
+                                            <td>
+                                                @item.ProductoNombre
+                                                <div class="form-text mt-0">Disponible: @Disponible(item.ProductoId)</div>
+                                            </td>
+                                            <td>
+                                                <input type="number" min="1" class="@(errores.ContainsKey(clave + "Cantidad") ? "form-control form-control-sm is-invalid" : "form-control form-control-sm")"
+                                                       @bind="item.Cantidad" @bind:event="oninput" />
+                                                <div class="invalid-feedback">@Error(clave + "Cantidad")</div>
+                                            </td>
+                                            <td>
+                                                <input type="number" min="0" step="0.01" class="@(errores.ContainsKey(clave + "Precio") ? "form-control form-control-sm is-invalid" : "form-control form-control-sm")"
+                                                       @bind="item.PrecioUnitario" @bind:event="oninput" />
+                                                <div class="invalid-feedback">@Error(clave + "Precio")</div>
+                                            </td>
+                                            <td class="text-end text-nowrap">@item.Subtotal.ToString("C2")</td>
+                                            <td class="text-end">
+                                                <button type="button" class="btn btn-sm btn-outline-danger" title="Quitar producto"
+                                                        @onclick="() => Quitar(item)">Quitar</button>
+                                            </td>
+                                        </tr>
+                                    }
+                                    @if (items.Count == 0)
+                                    {
+                                        <tr>
+                                            <td colspan="5" class="@(errores.ContainsKey("Items") ? "text-danger" : "text-muted")">
+                                                @(Error("Items") ?? "Todavía no se agregaron productos.")
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                                <tfoot>
+                                    <tr class="table-light">
+                                        <td>
+                                            <select class="@(errores.ContainsKey("Nuevo") ? "form-select form-select-sm is-invalid" : "form-select form-select-sm")"
+                                                    @bind="nuevoProductoId" @bind:after="AlElegirProducto">
+                                                <option value="0">Agregar producto...</option>
+                                                @foreach (var producto in ProductosDisponibles)
+                                                {
+                                                    <option value="@producto.Id">@producto.Nombre (@Disponible(producto.Id) disp.)</option>
+                                                }
+                                            </select>
+                                            <div class="invalid-feedback">@Error("Nuevo")</div>
+                                        </td>
+                                        <td><input type="number" min="1" class="form-control form-control-sm" @bind="nuevaCantidad" /></td>
+                                        <td><input type="number" min="0" step="0.01" class="form-control form-control-sm" @bind="nuevoPrecio" /></td>
+                                        <td></td>
+                                        <td class="text-end">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" @onclick="Agregar">Agregar</button>
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+
+                        <div class="d-flex justify-content-end fs-5">
+                            <span class="text-muted me-3">@items.Sum(i => i.Cantidad) unidades</span>
+                            <strong>Total: @items.Sum(i => i.Subtotal).ToString("C2")</strong>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(errorServidor))
+                        {
+                            <div class="alert alert-warning mb-0 mt-3">@errorServidor</div>
+                        }
+                    }
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="Cerrar" disabled="@guardando">Cancelar</button>
+                    <button type="button" class="btn btn-primary" @onclick="GuardarAsync" disabled="@(guardando || cargandoDatos)">
+                        @if (guardando)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                        }
+                        Guardar venta
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public EventCallback<VentaDTO> OnGuardado { get; set; }
+
+    private bool visible;
+    private bool guardando;
+    private bool cargandoDatos;
+    private FormMode modo;
+    private VentaDTO venta = new();
+    private List<DetalleVentaDTO> items = new();
+    private Dictionary<int, int> cantidadesOriginales = new();
+    private List<ProductoDTO> productos = new();
+    private List<SucursalDTO> sucursales = new();
+    private string fechaTexto = string.Empty;
+    private string? vendedor;
+    private int nuevoProductoId;
+    private int nuevaCantidad = 1;
+    private decimal nuevoPrecio;
+    private string? errorServidor;
+    private readonly Dictionary<string, string> errores = new();
+
+    private IEnumerable<ProductoDTO> ProductosDisponibles =>
+        productos.Where(p => items.All(i => i.ProductoId != p.Id)).OrderBy(p => p.Nombre);
+
+    public async Task MostrarAltaAsync()
+    {
+        modo = FormMode.Add;
+        venta = new VentaDTO();
+        items = new List<DetalleVentaDTO>();
+        cantidadesOriginales = new Dictionary<int, int>();
+        fechaTexto = DateTime.Now.ToString("dd/MM/yyyy HH:mm");
+
+        var usuario = await AuthService.GetUsuarioAsync();
+        vendedor = usuario?.NombreCompleto;
+
+        await AbrirAsync(usuario?.SucursalId);
+    }
+
+    public async Task MostrarEdicionAsync(VentaDTO existente)
+    {
+        modo = FormMode.Update;
+        venta = new VentaDTO
+        {
+            Id = existente.Id,
+            FechaHora = existente.FechaHora,
+            UsuarioId = existente.UsuarioId,
+            UsuarioNombre = existente.UsuarioNombre,
+            SucursalId = existente.SucursalId,
+            SucursalNombre = existente.SucursalNombre
+        };
+        items = existente.Detalles.Select(Clonar).ToList();
+        cantidadesOriginales = existente.Detalles.ToDictionary(d => d.ProductoId, d => d.Cantidad);
+        fechaTexto = existente.FechaHora.ToString("dd/MM/yyyy HH:mm");
+        vendedor = existente.UsuarioNombre;
+
+        await AbrirAsync(null);
+    }
+
+    private async Task AbrirAsync(int? sucursalPorDefecto)
+    {
+        errores.Clear();
+        errorServidor = null;
+        nuevoProductoId = 0;
+        nuevaCantidad = 1;
+        nuevoPrecio = 0;
+        visible = true;
+        cargandoDatos = true;
+        StateHasChanged();
+
+        try
+        {
+            productos = (await ProductoApiClient.GetAllAsync()).ToList();
+            sucursales = (await SucursalApiClient.GetAllAsync())
+                .Where(s => s.Activa || s.Id == venta.SucursalId)
+                .ToList();
+
+            if (modo == FormMode.Add && sucursalPorDefecto is int id && sucursales.Any(s => s.Id == id))
+                venta.SucursalId = id;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            visible = false;
+            Navigation.NavigateTo("login?expirada=true");
+        }
+        catch (Exception ex)
+        {
+            errorServidor = ex.Message;
+        }
+        finally
+        {
+            cargandoDatos = false;
+        }
+    }
+
+    private void Cerrar()
+    {
+        visible = false;
+    }
+
+    private int Disponible(int productoId) =>
+        (productos.FirstOrDefault(p => p.Id == productoId)?.Stock ?? 0) + cantidadesOriginales.GetValueOrDefault(productoId);
+
+    private string? Error(string campo) =>
+        errores.TryGetValue(campo, out var mensaje) ? mensaje : null;
+
+    private void LimpiarErrorSucursal()
+    {
+        errores.Remove("SucursalId");
+    }
+
+    private void AlElegirProducto()
+    {
+        errores.Remove("Nuevo");
+        var producto = productos.FirstOrDefault(p => p.Id == nuevoProductoId);
+        if (producto != null)
+            nuevoPrecio = producto.Precio;
+    }
+
+    private void Agregar()
+    {
+        errores.Remove("Nuevo");
+        errores.Remove("Items");
+
+        var producto = productos.FirstOrDefault(p => p.Id == nuevoProductoId);
+        if (producto == null)
+        {
+            errores["Nuevo"] = "Seleccione un producto";
+            return;
+        }
+
+        if (nuevaCantidad <= 0)
+        {
+            errores["Nuevo"] = "La cantidad debe ser mayor a 0";
+            return;
+        }
+
+        if (nuevaCantidad > Disponible(producto.Id))
+        {
+            errores["Nuevo"] = $"Stock insuficiente: hay {Disponible(producto.Id)} disponibles";
+            return;
+        }
+
+        if (nuevoPrecio <= 0)
+        {
+            errores["Nuevo"] = "El precio unitario debe ser mayor a 0";
+            return;
+        }
+
+        items.Add(new DetalleVentaDTO
+        {
+            ProductoId = producto.Id,
+            ProductoNombre = producto.Nombre,
+            Cantidad = nuevaCantidad,
+            PrecioUnitario = nuevoPrecio
+        });
+
+        nuevoProductoId = 0;
+        nuevaCantidad = 1;
+        nuevoPrecio = 0;
+    }
+
+    private void Quitar(DetalleVentaDTO item)
+    {
+        items.Remove(item);
+        errores.Remove($"Item{item.ProductoId}Cantidad");
+        errores.Remove($"Item{item.ProductoId}Precio");
+    }
+
+    private bool Validar()
+    {
+        errores.Clear();
+
+        if (venta.SucursalId <= 0)
+            errores["SucursalId"] = "Seleccione la sucursal donde se realizó la venta";
+
+        if (items.Count == 0)
+            errores["Items"] = "Agregue al menos un producto a la venta";
+
+        foreach (var item in items)
+        {
+            var clave = $"Item{item.ProductoId}";
+
+            if (item.Cantidad <= 0)
+                errores[clave + "Cantidad"] = "Debe ser mayor a 0";
+            else if (item.Cantidad > Disponible(item.ProductoId))
+                errores[clave + "Cantidad"] = $"Supera el stock ({Disponible(item.ProductoId)})";
+
+            if (item.PrecioUnitario <= 0)
+                errores[clave + "Precio"] = "Debe ser mayor a 0";
+        }
+
+        return errores.Count == 0;
+    }
+
+    private async Task GuardarAsync()
+    {
+        errorServidor = null;
+
+        if (!Validar())
+            return;
+
+        venta.Detalles = items.Select(Clonar).ToList();
+
+        try
+        {
+            guardando = true;
+
+            VentaDTO guardada;
+            if (modo == FormMode.Update)
+            {
+                await VentaApiClient.UpdateAsync(venta);
+                guardada = venta;
+            }
+            else
+            {
+                guardada = await VentaApiClient.AddAsync(venta);
+            }
+
+            visible = false;
+            await OnGuardado.InvokeAsync(guardada);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            visible = false;
+            Navigation.NavigateTo("login?expirada=true");
+        }
+        catch (Exception ex)
+        {
+            errorServidor = ex.Message;
+        }
+        finally
+        {
+            guardando = false;
+        }
+    }
+
+    private static DetalleVentaDTO Clonar(DetalleVentaDTO item) => new()
+    {
+        ProductoId = item.ProductoId,
+        ProductoNombre = item.ProductoNombre,
+        Cantidad = item.Cantidad,
+        PrecioUnitario = item.PrecioUnitario
+    };
+}

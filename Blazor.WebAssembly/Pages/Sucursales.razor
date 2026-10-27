@@ -1,0 +1,161 @@
+@page "/sucursales"
+@inherits PaginaAutenticada
+@inject IJSRuntime JS
+
+<PageTitle>Sucursales - Gestión de Stock</PageTitle>
+
+@if (Usuario != null && !EsAdministrador)
+{
+    <div class="alert alert-warning">La administración de sucursales es exclusiva para administradores.</div>
+}
+else
+{
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="mb-0">Sucursales</h3>
+        <button class="btn btn-primary" @onclick="() => modal.MostrarAlta()">Agregar sucursal</button>
+    </div>
+
+    @if (!string.IsNullOrEmpty(mensajeExito))
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @mensajeExito
+            <button type="button" class="btn-close" @onclick="() => mensajeExito = null"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(mensajeError))
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            @mensajeError
+            <button type="button" class="btn-close" @onclick="() => mensajeError = null"></button>
+        </div>
+    }
+
+    @if (cargando)
+    {
+        <div class="d-flex justify-content-center my-4">
+            <div class="spinner-border" role="status"><span class="visually-hidden">Cargando...</span></div>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Id</th>
+                        <th>Nombre</th>
+                        <th>Dirección</th>
+                        <th>Teléfono</th>
+                        <th>Estado</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var sucursal in sucursales)
+                    {
+                        <tr class="@(sucursal.Activa ? null : "text-muted")">
+                            <td>@sucursal.Id</td>
+                            <td>@sucursal.Nombre</td>
+                            <td>@sucursal.Direccion</td>
+                            <td>@sucursal.Telefono</td>
+                            <td>
+                                @if (sucursal.Activa)
+                                {
+                                    <span class="badge bg-success">Activa</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Inactiva</span>
+                                }
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <button class="btn btn-sm btn-outline-primary me-1" @onclick="() => EditarAsync(sucursal)">Editar</button>
+                                <button class="btn btn-sm btn-outline-danger" @onclick="() => EliminarAsync(sucursal)">Eliminar</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <p class="text-muted">@sucursales.Count sucursales · @sucursales.Count(s => s.Activa) activas</p>
+    }
+
+    <SucursalModal @ref="modal" OnGuardado="AlGuardarAsync" />
+}
+
+@code {
+    private List<SucursalDTO> sucursales = new();
+    private SucursalModal modal = default!;
+    private bool cargando = true;
+    private string? mensajeExito;
+    private string? mensajeError;
+
+    protected override async Task OnAutenticadoAsync()
+    {
+        if (EsAdministrador)
+            await CargarAsync();
+    }
+
+    private async Task CargarAsync()
+    {
+        try
+        {
+            cargando = true;
+            sucursales = (await SucursalApiClient.GetAllAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            mensajeError = MensajeDeError(ex);
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private async Task EditarAsync(SucursalDTO seleccionada)
+    {
+        try
+        {
+            mensajeError = null;
+            mensajeExito = null;
+            var sucursal = await SucursalApiClient.GetAsync(seleccionada.Id);
+            modal.MostrarEdicion(sucursal);
+        }
+        catch (Exception ex)
+        {
+            mensajeError = MensajeDeError(ex);
+        }
+    }
+
+    private async Task EliminarAsync(SucursalDTO sucursal)
+    {
+        var confirmar = await JS.InvokeAsync<bool>("confirm",
+            $"¿Está seguro que desea eliminar la sucursal \"{sucursal.Nombre}\"?");
+
+        if (!confirmar)
+            return;
+
+        try
+        {
+            mensajeError = null;
+            mensajeExito = null;
+            await SucursalApiClient.DeleteAsync(sucursal.Id);
+            mensajeExito = $"Sucursal \"{sucursal.Nombre}\" eliminada.";
+            await CargarAsync();
+        }
+        catch (Exception ex)
+        {
+            mensajeError = MensajeDeError(ex);
+        }
+    }
+
+    private async Task AlGuardarAsync(string mensaje)
+    {
+        mensajeError = null;
+        mensajeExito = mensaje;
+        await CargarAsync();
+    }
+}

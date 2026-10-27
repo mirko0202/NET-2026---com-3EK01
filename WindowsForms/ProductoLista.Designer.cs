@@ -20,6 +20,8 @@ namespace WindowsForms
             filtrosGroupBox = new GroupBox();
             buscarLabel = new Label();
             buscarTextBox = new TextBox();
+            categoriaLabel = new Label();
+            categoriaComboBox = new ComboBox();
             bajoStockCheckBox = new CheckBox();
             buscarButton = new Button();
             limpiarButton = new Button();
@@ -38,12 +40,14 @@ namespace WindowsForms
             filtrosGroupBox.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             filtrosGroupBox.Controls.Add(buscarLabel);
             filtrosGroupBox.Controls.Add(buscarTextBox);
+            filtrosGroupBox.Controls.Add(categoriaLabel);
+            filtrosGroupBox.Controls.Add(categoriaComboBox);
             filtrosGroupBox.Controls.Add(bajoStockCheckBox);
             filtrosGroupBox.Controls.Add(buscarButton);
             filtrosGroupBox.Controls.Add(limpiarButton);
             filtrosGroupBox.Location = new Point(14, 12);
             filtrosGroupBox.Name = "filtrosGroupBox";
-            filtrosGroupBox.Size = new Size(872, 70);
+            filtrosGroupBox.Size = new Size(1032, 70);
             filtrosGroupBox.TabIndex = 0;
             filtrosGroupBox.TabStop = false;
             filtrosGroupBox.Text = "Búsqueda con filtros";
@@ -63,36 +67,54 @@ namespace WindowsForms
             buscarTextBox.MaxLength = 100;
             buscarTextBox.Name = "buscarTextBox";
             buscarTextBox.PlaceholderText = "Nombre o descripción...";
-            buscarTextBox.Size = new Size(280, 23);
+            buscarTextBox.Size = new Size(240, 23);
             buscarTextBox.TabIndex = 1;
             buscarTextBox.KeyDown += buscarTextBox_KeyDown;
+            //
+            // categoriaLabel
+            //
+            categoriaLabel.AutoSize = true;
+            categoriaLabel.Location = new Point(325, 31);
+            categoriaLabel.Name = "categoriaLabel";
+            categoriaLabel.Size = new Size(61, 15);
+            categoriaLabel.TabIndex = 2;
+            categoriaLabel.Text = "Categoría:";
+            //
+            // categoriaComboBox
+            //
+            categoriaComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
+            categoriaComboBox.FormattingEnabled = true;
+            categoriaComboBox.Location = new Point(392, 28);
+            categoriaComboBox.Name = "categoriaComboBox";
+            categoriaComboBox.Size = new Size(160, 23);
+            categoriaComboBox.TabIndex = 3;
             //
             // bajoStockCheckBox
             //
             bajoStockCheckBox.AutoSize = true;
-            bajoStockCheckBox.Location = new Point(367, 30);
+            bajoStockCheckBox.Location = new Point(572, 30);
             bajoStockCheckBox.Name = "bajoStockCheckBox";
             bajoStockCheckBox.Size = new Size(190, 19);
-            bajoStockCheckBox.TabIndex = 2;
+            bajoStockCheckBox.TabIndex = 4;
             bajoStockCheckBox.Text = "Solo productos bajo stock mínimo";
             bajoStockCheckBox.UseVisualStyleBackColor = true;
             //
             // buscarButton
             //
-            buscarButton.Location = new Point(590, 26);
+            buscarButton.Location = new Point(806, 26);
             buscarButton.Name = "buscarButton";
             buscarButton.Size = new Size(100, 28);
-            buscarButton.TabIndex = 3;
+            buscarButton.TabIndex = 5;
             buscarButton.Text = "Buscar";
             buscarButton.UseVisualStyleBackColor = true;
             buscarButton.Click += buscarButton_Click;
             //
             // limpiarButton
             //
-            limpiarButton.Location = new Point(700, 26);
+            limpiarButton.Location = new Point(916, 26);
             limpiarButton.Name = "limpiarButton";
             limpiarButton.Size = new Size(100, 28);
-            limpiarButton.TabIndex = 4;
+            limpiarButton.TabIndex = 6;
             limpiarButton.Text = "Limpiar";
             limpiarButton.UseVisualStyleBackColor = true;
             limpiarButton.Click += limpiarButton_Click;
@@ -109,13 +131,13 @@ namespace WindowsForms
             productosDataGridView.ReadOnly = true;
             productosDataGridView.RowHeadersVisible = false;
             productosDataGridView.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            productosDataGridView.Size = new Size(872, 380);
+            productosDataGridView.Size = new Size(1032, 380);
             productosDataGridView.TabIndex = 1;
             //
             // agregarButton
             //
             agregarButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            agregarButton.Location = new Point(486, 490);
+            agregarButton.Location = new Point(646, 490);
             agregarButton.Name = "agregarButton";
             agregarButton.Size = new Size(120, 32);
             agregarButton.TabIndex = 2;
@@ -127,7 +149,7 @@ namespace WindowsForms
             //
             actualizarButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             actualizarButton.Enabled = false;
-            actualizarButton.Location = new Point(612, 490);
+            actualizarButton.Location = new Point(772, 490);
             actualizarButton.Name = "actualizarButton";
             actualizarButton.Size = new Size(120, 32);
             actualizarButton.TabIndex = 3;
@@ -139,7 +161,7 @@ namespace WindowsForms
             //
             eliminarButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             eliminarButton.Enabled = false;
-            eliminarButton.Location = new Point(738, 490);
+            eliminarButton.Location = new Point(898, 490);
             eliminarButton.Name = "eliminarButton";
             eliminarButton.Size = new Size(120, 32);
             eliminarButton.TabIndex = 4;
@@ -172,7 +194,7 @@ namespace WindowsForms
             //
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(900, 540);
+            ClientSize = new Size(1060, 540);
             Controls.Add(resultadosLabel);
             Controls.Add(cerrarButton);
             Controls.Add(eliminarButton);
@@ -180,7 +202,7 @@ namespace WindowsForms
             Controls.Add(agregarButton);
             Controls.Add(productosDataGridView);
             Controls.Add(filtrosGroupBox);
-            MinimumSize = new Size(760, 480);
+            MinimumSize = new Size(1076, 480);
             Name = "ProductoLista";
             StartPosition = FormStartPosition.CenterParent;
             Text = "Productos";
@@ -197,6 +219,8 @@ namespace WindowsForms
         private GroupBox filtrosGroupBox;
         private Label buscarLabel;
         private TextBox buscarTextBox;
+        private Label categoriaLabel;
+        private ComboBox categoriaComboBox;
         private CheckBox bajoStockCheckBox;
         private Button buscarButton;
         private Button limpiarButton;

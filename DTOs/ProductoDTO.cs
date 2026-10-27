@@ -8,6 +8,9 @@ namespace DTOs
         public string? Unidad { get; set; }
         public int Stock { get; set; }
         public int StockMin { get; set; }
+        public decimal Precio { get; set; }
+        public int Categoria { get; set; }
+        public string? CategoriaNombre { get; set; }
         public bool BajoStock { get; set; }
     }
 }

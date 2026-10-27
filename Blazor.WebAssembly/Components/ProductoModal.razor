@@ -27,6 +27,18 @@
                         </div>
 
                         <div class="mb-3">
+                            <label class="form-label" for="categoria">Categoría *</label>
+                            <InputSelect id="categoria" class="@ClaseSelect("Categoria")" @bind-Value="producto.Categoria">
+                                <option value="0">Seleccione una categoría...</option>
+                                @foreach (var categoria in Categorias)
+                                {
+                                    <option value="@categoria.Id">@categoria.Nombre</option>
+                                }
+                            </InputSelect>
+                            <div class="invalid-feedback">@Error("Categoria")</div>
+                        </div>
+
+                        <div class="mb-3">
                             <label class="form-label" for="descripcion">Descripción</label>
                             <InputTextArea id="descripcion" class="@ClaseCampo("Descripcion")" rows="2"
                                            @bind-Value="producto.Descripcion" maxlength="255" />
@@ -45,6 +57,15 @@
                                 <option value="porción"></option>
                             </datalist>
                             <div class="invalid-feedback">@Error("Unidad")</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="precio">Precio de venta *</label>
+                            <div class="input-group has-validation">
+                                <span class="input-group-text">$</span>
+                                <InputNumber id="precio" class="@ClaseCampo("Precio")" @bind-Value="producto.Precio" min="0" step="0.01" />
+                                <div class="invalid-feedback">@Error("Precio")</div>
+                            </div>
                         </div>
 
                         <div class="row">
@@ -86,6 +107,9 @@
     [Parameter]
     public EventCallback<string> OnGuardado { get; set; }
 
+    [Parameter]
+    public List<CategoriaDTO> Categorias { get; set; } = new();
+
     private bool visible;
     private bool guardando;
     private FormMode modo;
@@ -109,6 +133,8 @@
             Nombre = existente.Nombre,
             Descripcion = existente.Descripcion,
             Unidad = existente.Unidad,
+            Precio = existente.Precio,
+            Categoria = existente.Categoria,
             Stock = existente.Stock,
             StockMin = existente.StockMin
         };
@@ -131,6 +157,9 @@
     private string ClaseCampo(string campo) =>
         errores.ContainsKey(campo) ? "form-control is-invalid" : "form-control";
 
+    private string ClaseSelect(string campo) =>
+        errores.ContainsKey(campo) ? "form-select is-invalid" : "form-select";
+
     private string? Error(string campo) =>
         errores.TryGetValue(campo, out var mensaje) ? mensaje : null;
 
@@ -142,6 +171,14 @@
             errores["Nombre"] = "El nombre es requerido";
         else if (producto.Nombre.Trim().Length > 100)
             errores["Nombre"] = "El nombre no puede superar los 100 caracteres";
+
+        if (producto.Categoria <= 0)
+            errores["Categoria"] = "Seleccione la categoría del producto";
+
+        if (producto.Precio <= 0)
+            errores["Precio"] = "El precio debe ser mayor a 0";
+        else if (producto.Precio > 10_000_000)
+            errores["Precio"] = "El precio no puede superar $ 10.000.000";
 
         if (producto.Descripcion?.Length > 255)
             errores["Descripcion"] = "La descripción no puede superar los 255 caracteres";

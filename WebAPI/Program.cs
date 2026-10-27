@@ -17,7 +17,7 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "Stock API - Gestión de Stock",
         Version = "v1",
-        Description = "TPI .NET - Entrega 3 (Servicios + Entity Framework + seguridad con tokens JWT)."
+        Description = "TPI .NET - Entrega final (Servicios + Entity Framework + JWT + reportes)."
     });
 
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -50,12 +50,16 @@ builder.Services.AddScoped<IIngredienteRepository, IngredienteRepository>();
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<ISucursalRepository, SucursalRepository>();
 builder.Services.AddScoped<IVentaRepository, VentaRepository>();
+builder.Services.AddScoped<IIngresoProductoRepository, IngresoProductoRepository>();
 
 builder.Services.AddScoped<IProductoService, ProductoService>();
 builder.Services.AddScoped<IIngredienteService, IngredienteService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ISucursalService, SucursalService>();
 builder.Services.AddScoped<IVentaService, VentaService>();
+builder.Services.AddScoped<IUsuarioService, UsuarioService>();
+builder.Services.AddScoped<IIngresoProductoService, IngresoProductoService>();
+builder.Services.AddScoped<IReporteService, ReporteService>();
 
 var jwt = builder.Configuration.GetSection("JwtSettings");
 
@@ -110,5 +114,8 @@ app.MapProductoEndpoints();
 app.MapIngredienteEndpoints();
 app.MapSucursalEndpoints();
 app.MapVentaEndpoints();
+app.MapUsuarioEndpoints();
+app.MapIngresoProductoEndpoints();
+app.MapReporteEndpoints();
 
 app.Run();

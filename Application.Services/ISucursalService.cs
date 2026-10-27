@@ -6,5 +6,8 @@ namespace Application.Services
     {
         Task<SucursalDTO?> GetAsync(int id);
         Task<IEnumerable<SucursalDTO>> GetAllAsync();
+        Task<SucursalDTO> AddAsync(SucursalDTO dto);
+        Task<bool> UpdateAsync(SucursalDTO dto);
+        Task<bool> DeleteAsync(int id);
     }
 }

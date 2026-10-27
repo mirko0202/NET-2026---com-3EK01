@@ -38,9 +38,18 @@
     <div class="card-body">
         <h6 class="card-subtitle mb-2 text-muted">Búsqueda con filtros</h6>
         <div class="row g-2 align-items-center">
-            <div class="col-md-5">
+            <div class="col-md-4">
                 <input class="form-control" placeholder="Nombre o descripción..." maxlength="100"
                        @bind="texto" @bind:event="oninput" @onkeydown="TeclaEnBusquedaAsync" />
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" @bind="categoriaId" @bind:after="BuscarAsync" aria-label="Categoría">
+                    <option value="0">Todas las categorías</option>
+                    @foreach (var categoria in categorias)
+                    {
+                        <option value="@categoria.Id">@categoria.Nombre</option>
+                    }
+                </select>
             </div>
             <div class="col-auto">
                 <div class="form-check">
@@ -71,8 +80,10 @@ else
                 <tr>
                     <th>Id</th>
                     <th>Nombre</th>
+                    <th>Categoría</th>
                     <th>Descripción</th>
                     <th>Unidad</th>
+                    <th class="text-end">Precio</th>
                     <th class="text-end">Stock</th>
                     <th class="text-end">Stock mín.</th>
                     <th>Estado</th>
@@ -88,8 +99,10 @@ else
                     <tr class="@(producto.BajoStock ? "table-danger" : null)">
                         <td>@producto.Id</td>
                         <td>@producto.Nombre</td>
+                        <td>@producto.CategoriaNombre</td>
                         <td>@producto.Descripcion</td>
                         <td>@producto.Unidad</td>
+                        <td class="text-end text-nowrap">@producto.Precio.ToString("C2")</td>
                         <td class="text-end">@producto.Stock</td>
                         <td class="text-end">@producto.StockMin</td>
                         <td>
@@ -120,12 +133,14 @@ else
     </p>
 }
 
-<ProductoModal @ref="modal" OnGuardado="AlGuardarAsync" />
+<ProductoModal @ref="modal" Categorias="categorias" OnGuardado="AlGuardarAsync" />
 
 @code {
     private List<ProductoDTO> productos = new();
+    private List<CategoriaDTO> categorias = new();
     private ProductoModal modal = default!;
     private string texto = string.Empty;
+    private int categoriaId;
     private bool soloBajoStock;
     private bool cargando = true;
     private string? mensajeExito;
@@ -133,6 +148,15 @@ else
 
     protected override async Task OnAutenticadoAsync()
     {
+        try
+        {
+            categorias = (await ProductoApiClient.GetCategoriasAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            mensajeError = MensajeDeError(ex);
+        }
+
         await BuscarAsync();
     }
 
@@ -142,9 +166,11 @@ else
         {
             cargando = true;
 
-            var resultado = string.IsNullOrWhiteSpace(texto) && !soloBajoStock
+            int? categoria = categoriaId > 0 ? categoriaId : null;
+
+            var resultado = string.IsNullOrWhiteSpace(texto) && !soloBajoStock && categoria == null
                 ? await ProductoApiClient.GetAllAsync()
-                : await ProductoApiClient.GetByCriteriaAsync(texto.Trim(), soloBajoStock);
+                : await ProductoApiClient.GetByCriteriaAsync(texto.Trim(), soloBajoStock, categoria);
 
             productos = resultado.ToList();
         }
@@ -167,6 +193,7 @@ else
     private async Task LimpiarAsync()
     {
         texto = string.Empty;
+        categoriaId = 0;
         soloBajoStock = false;
         await BuscarAsync();
     }

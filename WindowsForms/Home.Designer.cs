@@ -22,6 +22,13 @@ namespace WindowsForms
             productosToolStripMenuItem = new ToolStripMenuItem();
             ingredientesToolStripMenuItem = new ToolStripMenuItem();
             ventasToolStripMenuItem = new ToolStripMenuItem();
+            ingresosToolStripMenuItem = new ToolStripMenuItem();
+            administracionToolStripMenuItem = new ToolStripMenuItem();
+            sucursalesToolStripMenuItem = new ToolStripMenuItem();
+            usuariosToolStripMenuItem = new ToolStripMenuItem();
+            reportesToolStripMenuItem = new ToolStripMenuItem();
+            reporteVentasToolStripMenuItem = new ToolStripMenuItem();
+            reporteBajoStockToolStripMenuItem = new ToolStripMenuItem();
             sesionToolStripMenuItem = new ToolStripMenuItem();
             cerrarSesionToolStripMenuItem = new ToolStripMenuItem();
             separadorSesionToolStripMenuItem = new ToolStripSeparator();
@@ -37,7 +44,7 @@ namespace WindowsForms
             //
             // menuStrip
             //
-            menuStrip.Items.AddRange(new ToolStripItem[] { gestionToolStripMenuItem, sesionToolStripMenuItem });
+            menuStrip.Items.AddRange(new ToolStripItem[] { gestionToolStripMenuItem, administracionToolStripMenuItem, reportesToolStripMenuItem, sesionToolStripMenuItem });
             menuStrip.Location = new Point(0, 0);
             menuStrip.Name = "menuStrip";
             menuStrip.Size = new Size(900, 24);
@@ -45,7 +52,7 @@ namespace WindowsForms
             //
             // gestionToolStripMenuItem
             //
-            gestionToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { productosToolStripMenuItem, ingredientesToolStripMenuItem, ventasToolStripMenuItem });
+            gestionToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { productosToolStripMenuItem, ingredientesToolStripMenuItem, ventasToolStripMenuItem, ingresosToolStripMenuItem });
             gestionToolStripMenuItem.Name = "gestionToolStripMenuItem";
             gestionToolStripMenuItem.Size = new Size(59, 20);
             gestionToolStripMenuItem.Text = "&Gestión";
@@ -53,23 +60,72 @@ namespace WindowsForms
             // productosToolStripMenuItem
             //
             productosToolStripMenuItem.Name = "productosToolStripMenuItem";
-            productosToolStripMenuItem.Size = new Size(180, 22);
+            productosToolStripMenuItem.Size = new Size(210, 22);
             productosToolStripMenuItem.Text = "&Productos";
             productosToolStripMenuItem.Click += productosToolStripMenuItem_Click;
             //
             // ingredientesToolStripMenuItem
             //
             ingredientesToolStripMenuItem.Name = "ingredientesToolStripMenuItem";
-            ingredientesToolStripMenuItem.Size = new Size(180, 22);
+            ingredientesToolStripMenuItem.Size = new Size(210, 22);
             ingredientesToolStripMenuItem.Text = "&Ingredientes";
             ingredientesToolStripMenuItem.Click += ingredientesToolStripMenuItem_Click;
             //
             // ventasToolStripMenuItem
             //
             ventasToolStripMenuItem.Name = "ventasToolStripMenuItem";
-            ventasToolStripMenuItem.Size = new Size(180, 22);
+            ventasToolStripMenuItem.Size = new Size(210, 22);
             ventasToolStripMenuItem.Text = "&Ventas";
             ventasToolStripMenuItem.Click += ventasToolStripMenuItem_Click;
+            //
+            // ingresosToolStripMenuItem
+            //
+            ingresosToolStripMenuItem.Name = "ingresosToolStripMenuItem";
+            ingresosToolStripMenuItem.Size = new Size(210, 22);
+            ingresosToolStripMenuItem.Text = "Ingresos de &mercadería";
+            ingresosToolStripMenuItem.Click += ingresosToolStripMenuItem_Click;
+            //
+            // administracionToolStripMenuItem
+            //
+            administracionToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { sucursalesToolStripMenuItem, usuariosToolStripMenuItem });
+            administracionToolStripMenuItem.Name = "administracionToolStripMenuItem";
+            administracionToolStripMenuItem.Size = new Size(100, 20);
+            administracionToolStripMenuItem.Text = "&Administración";
+            //
+            // sucursalesToolStripMenuItem
+            //
+            sucursalesToolStripMenuItem.Name = "sucursalesToolStripMenuItem";
+            sucursalesToolStripMenuItem.Size = new Size(180, 22);
+            sucursalesToolStripMenuItem.Text = "S&ucursales";
+            sucursalesToolStripMenuItem.Click += sucursalesToolStripMenuItem_Click;
+            //
+            // usuariosToolStripMenuItem
+            //
+            usuariosToolStripMenuItem.Name = "usuariosToolStripMenuItem";
+            usuariosToolStripMenuItem.Size = new Size(180, 22);
+            usuariosToolStripMenuItem.Text = "&Usuarios";
+            usuariosToolStripMenuItem.Click += usuariosToolStripMenuItem_Click;
+            //
+            // reportesToolStripMenuItem
+            //
+            reportesToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { reporteVentasToolStripMenuItem, reporteBajoStockToolStripMenuItem });
+            reportesToolStripMenuItem.Name = "reportesToolStripMenuItem";
+            reportesToolStripMenuItem.Size = new Size(65, 20);
+            reportesToolStripMenuItem.Text = "&Reportes";
+            //
+            // reporteVentasToolStripMenuItem
+            //
+            reporteVentasToolStripMenuItem.Name = "reporteVentasToolStripMenuItem";
+            reporteVentasToolStripMenuItem.Size = new Size(260, 22);
+            reporteVentasToolStripMenuItem.Text = "&Ventas por período y sucursal";
+            reporteVentasToolStripMenuItem.Click += reporteVentasToolStripMenuItem_Click;
+            //
+            // reporteBajoStockToolStripMenuItem
+            //
+            reporteBajoStockToolStripMenuItem.Name = "reporteBajoStockToolStripMenuItem";
+            reporteBajoStockToolStripMenuItem.Size = new Size(260, 22);
+            reporteBajoStockToolStripMenuItem.Text = "&Stock bajo el mínimo";
+            reporteBajoStockToolStripMenuItem.Click += reporteBajoStockToolStripMenuItem_Click;
             //
             // sesionToolStripMenuItem
             //
@@ -171,6 +227,13 @@ namespace WindowsForms
         private ToolStripMenuItem productosToolStripMenuItem;
         private ToolStripMenuItem ingredientesToolStripMenuItem;
         private ToolStripMenuItem ventasToolStripMenuItem;
+        private ToolStripMenuItem ingresosToolStripMenuItem;
+        private ToolStripMenuItem administracionToolStripMenuItem;
+        private ToolStripMenuItem sucursalesToolStripMenuItem;
+        private ToolStripMenuItem usuariosToolStripMenuItem;
+        private ToolStripMenuItem reportesToolStripMenuItem;
+        private ToolStripMenuItem reporteVentasToolStripMenuItem;
+        private ToolStripMenuItem reporteBajoStockToolStripMenuItem;
         private ToolStripMenuItem sesionToolStripMenuItem;
         private ToolStripMenuItem cerrarSesionToolStripMenuItem;
         private ToolStripSeparator separadorSesionToolStripMenuItem;

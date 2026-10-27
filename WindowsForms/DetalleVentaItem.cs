@@ -50,6 +50,12 @@ namespace WindowsForms
 
         private void productoComboBox_SelectedIndexChanged(object sender, EventArgs e)
         {
+            if (mode == FormMode.Add && ProductoSeleccionado is { Precio: > 0 } producto)
+            {
+                precioNumericUpDown.Value = Math.Clamp(producto.Precio, precioNumericUpDown.Minimum,
+                                                       precioNumericUpDown.Maximum);
+            }
+
             ActualizarResumen();
         }
 

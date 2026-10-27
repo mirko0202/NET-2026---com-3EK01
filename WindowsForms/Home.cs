@@ -21,38 +21,67 @@ namespace WindowsForms
             }
 
             bienvenidaLabel.Text = $"Bienvenido, {usuario.NombreCompleto}";
-            usuarioStatusLabel.Text = $"Usuario: {usuario.Username}  |  Rol: {usuario.Rol}";
+            usuarioStatusLabel.Text = $"Usuario: {usuario.Username}  |  Rol: {usuario.Rol}  |  " +
+                                      $"Sucursal: {usuario.SucursalNombre ?? "todas"}";
 
             AplicarAutorizacion(usuario.EsAdministrador);
         }
 
         private void AplicarAutorizacion(bool esAdministrador)
         {
+            administracionToolStripMenuItem.Visible = esAdministrador;
+            reportesToolStripMenuItem.Visible = esAdministrador;
+
             permisosLabel.Text = esAdministrador
-                ? "Perfil Administrador: gestiona productos, ingredientes y ventas."
-                : "Perfil Empleado: consulta el stock y registra ventas.";
+                ? "Perfil Administrador: gestiona productos, ingredientes, ventas, ingresos de mercadería, " +
+                  "sucursales y usuarios, y consulta los reportes."
+                : "Perfil Empleado: consulta el stock y el historial de ingresos, y registra ventas.";
         }
 
         private async void productosToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            using (var productos = new ProductoLista())
-                productos.ShowDialog();
-
-            await VerificarSesionAsync();
+            await AbrirAsync(new ProductoLista());
         }
 
         private async void ingredientesToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            using (var ingredientes = new IngredienteLista())
-                ingredientes.ShowDialog();
-
-            await VerificarSesionAsync();
+            await AbrirAsync(new IngredienteLista());
         }
 
         private async void ventasToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            using (var ventas = new VentaLista())
-                ventas.ShowDialog();
+            await AbrirAsync(new VentaLista());
+        }
+
+        private async void ingresosToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            await AbrirAsync(new IngresoLista());
+        }
+
+        private async void sucursalesToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            await AbrirAsync(new SucursalLista());
+        }
+
+        private async void usuariosToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            await AbrirAsync(new UsuarioLista());
+        }
+
+        private async void reporteVentasToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            await AbrirAsync(new ReporteVentas());
+        }
+
+        private async void reporteBajoStockToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            await AbrirAsync(new ReporteBajoStock());
+        }
+
+        private async Task AbrirAsync(Form formulario)
+        {
+            using (formulario)
+                formulario.ShowDialog();
 
             await VerificarSesionAsync();
         }

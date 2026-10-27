@@ -31,7 +31,7 @@ namespace WebAPI
 
             app.MapPost("/ventas", async (VentaDTO dto, ClaimsPrincipal usuario, IVentaService service) =>
             {
-                if (!int.TryParse(usuario.FindFirstValue(ClaimTypes.NameIdentifier), out var usuarioId))
+                if (usuario.UsuarioId() is not int usuarioId)
                     return Results.Unauthorized();
 
                 try

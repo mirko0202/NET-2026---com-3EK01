@@ -33,6 +33,22 @@ namespace Data
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<Venta>> GetByPeriodoAsync(DateTime desde, DateTime hasta, int? sucursalId)
+        {
+            var query = context.Ventas
+                .Include(v => v.Sucursal)
+                .Include(v => v.Detalles)
+                    .ThenInclude(d => d.Producto)
+                .Where(v => v.FechaHora >= desde.Date && v.FechaHora < hasta.Date.AddDays(1));
+
+            if (sucursalId.HasValue)
+                query = query.Where(v => v.SucursalId == sucursalId.Value);
+
+            return await query
+                .OrderBy(v => v.FechaHora)
+                .ToListAsync();
+        }
+
         public async Task AddAsync(Venta venta)
         {
             context.Ventas.Add(venta);

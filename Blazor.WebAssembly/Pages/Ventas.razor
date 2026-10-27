@@ -1,0 +1,217 @@
+@page "/ventas"
+@inherits PaginaAutenticada
+@inject IJSRuntime JS
+
+<PageTitle>Ventas - Gestión de Stock</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">Ventas</h3>
+    <button class="btn btn-primary" @onclick="NuevaAsync">Nueva venta</button>
+</div>
+
+@if (!string.IsNullOrEmpty(mensajeExito))
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        @mensajeExito
+        <button type="button" class="btn-close" @onclick="() => mensajeExito = null"></button>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(mensajeError))
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        @mensajeError
+        <button type="button" class="btn-close" @onclick="() => mensajeError = null"></button>
+    </div>
+}
+
+@if (cargando)
+{
+    <div class="d-flex justify-content-center my-4">
+        <div class="spinner-border" role="status"><span class="visually-hidden">Cargando...</span></div>
+    </div>
+}
+else
+{
+    <div class="card mb-3">
+        <div class="table-responsive tabla-maestro">
+            <table class="table table-hover table-sm align-middle mb-0">
+                <thead class="table-dark sticky-top">
+                    <tr>
+                        <th>N°</th>
+                        <th>Fecha y hora</th>
+                        <th>Sucursal</th>
+                        <th>Vendedor</th>
+                        <th class="text-end">Unidades</th>
+                        <th class="text-end">Total</th>
+                        @if (EsAdministrador)
+                        {
+                            <th></th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var venta in ventas)
+                    {
+                        <tr class="@(venta.Id == seleccionada?.Id ? "table-primary" : null)" role="button" @onclick="() => seleccionada = venta">
+                            <td>@venta.Id</td>
+                            <td class="text-nowrap">@venta.FechaHora.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>@venta.SucursalNombre</td>
+                            <td>@venta.UsuarioNombre</td>
+                            <td class="text-end">@venta.CantidadProductos</td>
+                            <td class="text-end text-nowrap">@venta.Total.ToString("C2")</td>
+                            @if (EsAdministrador)
+                            {
+                                <td class="text-end text-nowrap">
+                                    <button class="btn btn-sm btn-outline-primary me-1" @onclick="() => EditarAsync(venta)" @onclick:stopPropagation="true">Editar</button>
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => EliminarAsync(venta)" @onclick:stopPropagation="true">Eliminar</button>
+                                </td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="card-footer text-muted small">
+            @ventas.Count ventas registradas · @ventas.Sum(v => v.Total).ToString("C2") facturados
+        </div>
+    </div>
+
+    @if (seleccionada != null)
+    {
+        <div class="card">
+            <div class="card-header">
+                <strong>Productos de la venta N° @seleccionada.Id</strong>
+                <span class="text-muted"> · @seleccionada.SucursalNombre · @seleccionada.FechaHora.ToString("dd/MM/yyyy HH:mm") · @seleccionada.UsuarioNombre</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th class="text-end">Cantidad</th>
+                            <th class="text-end">Precio unitario</th>
+                            <th class="text-end">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var detalle in seleccionada.Detalles.OrderBy(d => d.ProductoNombre))
+                        {
+                            <tr>
+                                <td>@detalle.ProductoNombre</td>
+                                <td class="text-end">@detalle.Cantidad</td>
+                                <td class="text-end">@detalle.PrecioUnitario.ToString("C2")</td>
+                                <td class="text-end">@detalle.Subtotal.ToString("C2")</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr class="fw-bold">
+                            <td>Total</td>
+                            <td class="text-end">@seleccionada.CantidadProductos</td>
+                            <td></td>
+                            <td class="text-end">@seleccionada.Total.ToString("C2")</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    }
+    else if (ventas.Count > 0)
+    {
+        <p class="text-muted">Seleccione una venta para ver los productos vendidos.</p>
+    }
+}
+
+<VentaModal @ref="modal" OnGuardado="AlGuardarAsync" />
+
+@code {
+    private List<VentaDTO> ventas = new();
+    private VentaDTO? seleccionada;
+    private VentaModal modal = default!;
+    private bool cargando = true;
+    private string? mensajeExito;
+    private string? mensajeError;
+
+    protected override async Task OnAutenticadoAsync()
+    {
+        await CargarAsync();
+    }
+
+    private async Task CargarAsync(int? seleccionarId = null)
+    {
+        try
+        {
+            cargando = true;
+            ventas = (await VentaApiClient.GetAllAsync())
+                .OrderByDescending(v => v.FechaHora)
+                .ToList();
+
+            var id = seleccionarId ?? seleccionada?.Id;
+            seleccionada = ventas.FirstOrDefault(v => v.Id == id) ?? ventas.FirstOrDefault();
+        }
+        catch (Exception ex)
+        {
+            mensajeError = MensajeDeError(ex);
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private async Task NuevaAsync()
+    {
+        mensajeError = null;
+        mensajeExito = null;
+        await modal.MostrarAltaAsync();
+    }
+
+    private async Task EditarAsync(VentaDTO seleccionadaParaEditar)
+    {
+        try
+        {
+            mensajeError = null;
+            mensajeExito = null;
+            var venta = await VentaApiClient.GetAsync(seleccionadaParaEditar.Id);
+            await modal.MostrarEdicionAsync(venta);
+        }
+        catch (Exception ex)
+        {
+            mensajeError = MensajeDeError(ex);
+        }
+    }
+
+    private async Task EliminarAsync(VentaDTO venta)
+    {
+        var confirmar = await JS.InvokeAsync<bool>("confirm",
+            $"¿Eliminar la venta N° {venta.Id} por {venta.Total:C2}? Se devolverá el stock de los productos vendidos.");
+
+        if (!confirmar)
+            return;
+
+        try
+        {
+            mensajeError = null;
+            mensajeExito = null;
+            await VentaApiClient.DeleteAsync(venta.Id);
+            mensajeExito = $"Venta N° {venta.Id} eliminada.";
+
+            if (seleccionada?.Id == venta.Id)
+                seleccionada = null;
+
+            await CargarAsync();
+        }
+        catch (Exception ex)
+        {
+            mensajeError = MensajeDeError(ex);
+        }
+    }
+
+    private async Task AlGuardarAsync(VentaDTO guardada)
+    {
+        mensajeError = null;
+        mensajeExito = $"Venta N° {guardada.Id} guardada: {guardada.CantidadProductos} unidades por {guardada.Total:C2}.";
+        await CargarAsync(guardada.Id);
+    }
+}

@@ -1,0 +1,194 @@
+@page "/usuarios"
+@inherits PaginaAutenticada
+@inject IJSRuntime JS
+
+<PageTitle>Usuarios - Gestión de Stock</PageTitle>
+
+@if (Usuario != null && !EsAdministrador)
+{
+    <div class="alert alert-warning">La administración de usuarios es exclusiva para administradores.</div>
+}
+else
+{
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="mb-0">Usuarios del sistema</h3>
+        <button class="btn btn-primary" @onclick="AgregarAsync">Agregar usuario</button>
+    </div>
+
+    @if (!string.IsNullOrEmpty(mensajeExito))
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @mensajeExito
+            <button type="button" class="btn-close" @onclick="() => mensajeExito = null"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(mensajeError))
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            @mensajeError
+            <button type="button" class="btn-close" @onclick="() => mensajeError = null"></button>
+        </div>
+    }
+
+    @if (cargando)
+    {
+        <div class="d-flex justify-content-center my-4">
+            <div class="spinner-border" role="status"><span class="visually-hidden">Cargando...</span></div>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Id</th>
+                        <th>Usuario</th>
+                        <th>Nombre completo</th>
+                        <th>Rol</th>
+                        <th>Sucursal</th>
+                        <th>Estado</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var usuario in usuarios)
+                    {
+                        var esUnoMismo = usuario.Id == Usuario?.Id;
+                        <tr class="@(usuario.Activo ? null : "text-muted")">
+                            <td>@usuario.Id</td>
+                            <td>
+                                @usuario.Username
+                                @if (esUnoMismo)
+                                {
+                                    <span class="badge bg-info text-dark ms-1">usted</span>
+                                }
+                            </td>
+                            <td>@usuario.NombreCompleto</td>
+                            <td>
+                                <span class="badge @(usuario.EsAdministrador ? "bg-primary" : "bg-light text-dark border")">@usuario.Rol</span>
+                            </td>
+                            <td>@(usuario.SucursalNombre ?? "-")</td>
+                            <td>
+                                @if (usuario.Activo)
+                                {
+                                    <span class="badge bg-success">Activo</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Inactivo</span>
+                                }
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <button class="btn btn-sm btn-outline-primary me-1" @onclick="() => EditarAsync(usuario)">Editar</button>
+                                <button class="btn btn-sm btn-outline-danger" disabled="@esUnoMismo" @onclick="() => EliminarAsync(usuario)">Eliminar</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <p class="text-muted">
+            @usuarios.Count usuarios · @usuarios.Count(u => u.EsAdministrador && u.Activo) administradores activos
+        </p>
+    }
+
+    <UsuarioModal @ref="modal" Sucursales="sucursales" UsuarioActualId="@(Usuario?.Id ?? 0)" OnGuardado="AlGuardarAsync" />
+}
+
+@code {
+    private List<UsuarioDTO> usuarios = new();
+    private List<SucursalDTO> sucursales = new();
+    private UsuarioModal modal = default!;
+    private bool cargando = true;
+    private string? mensajeExito;
+    private string? mensajeError;
+
+    protected override async Task OnAutenticadoAsync()
+    {
+        if (!EsAdministrador)
+            return;
+
+        try
+        {
+            sucursales = (await SucursalApiClient.GetAllAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            mensajeError = MensajeDeError(ex);
+        }
+
+        await CargarAsync();
+    }
+
+    private async Task CargarAsync()
+    {
+        try
+        {
+            cargando = true;
+            usuarios = (await UsuarioApiClient.GetAllAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            mensajeError = MensajeDeError(ex);
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private Task AgregarAsync()
+    {
+        mensajeError = null;
+        mensajeExito = null;
+        modal.MostrarAlta();
+        return Task.CompletedTask;
+    }
+
+    private async Task EditarAsync(UsuarioDTO seleccionado)
+    {
+        try
+        {
+            mensajeError = null;
+            mensajeExito = null;
+            var usuario = await UsuarioApiClient.GetAsync(seleccionado.Id);
+            modal.MostrarEdicion(usuario);
+        }
+        catch (Exception ex)
+        {
+            mensajeError = MensajeDeError(ex);
+        }
+    }
+
+    private async Task EliminarAsync(UsuarioDTO usuario)
+    {
+        var confirmar = await JS.InvokeAsync<bool>("confirm",
+            $"¿Está seguro que desea eliminar al usuario \"{usuario.Username}\" ({usuario.NombreCompleto})?");
+
+        if (!confirmar)
+            return;
+
+        try
+        {
+            mensajeError = null;
+            mensajeExito = null;
+            await UsuarioApiClient.DeleteAsync(usuario.Id);
+            mensajeExito = $"Usuario \"{usuario.Username}\" eliminado.";
+            await CargarAsync();
+        }
+        catch (Exception ex)
+        {
+            mensajeError = MensajeDeError(ex);
+        }
+    }
+
+    private async Task AlGuardarAsync(string mensaje)
+    {
+        mensajeError = null;
+        mensajeExito = mensaje;
+        await CargarAsync();
+    }
+}

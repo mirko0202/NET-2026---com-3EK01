@@ -79,3 +79,13 @@
         overflow-y: auto;
     }
 }
+
+.nav-seccion {
+    color: #9aa7b8;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding-top: 0.75rem;
+    padding-bottom: 0.35rem;
+}

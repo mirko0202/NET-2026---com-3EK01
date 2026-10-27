@@ -8,11 +8,13 @@ namespace Domain.Model
         public string? Unidad { get; private set; }
         public int Stock { get; private set; }
         public int StockMin { get; private set; }
+        public decimal Precio { get; private set; }
+        public CategoriaProducto Categoria { get; private set; }
 
         public bool BajoStock => Stock <= StockMin;
 
-        public Producto(int id, string nombre, string? descripcion,
-                        string? unidad, int stock, int stockMin)
+        public Producto(int id, string nombre, string? descripcion, string? unidad,
+                        int stock, int stockMin, decimal precio, CategoriaProducto categoria)
         {
             SetId(id);
             SetNombre(nombre);
@@ -20,6 +22,8 @@ namespace Domain.Model
             SetUnidad(unidad);
             SetStock(stock);
             SetStockMin(stockMin);
+            SetPrecio(precio);
+            SetCategoria(categoria);
         }
 
         private Producto() { }
@@ -66,6 +70,22 @@ namespace Domain.Model
             if (stockMin < 0)
                 throw new ArgumentException("El stock mínimo no puede ser negativo.", nameof(stockMin));
             StockMin = stockMin;
+        }
+
+        public void SetPrecio(decimal precio)
+        {
+            if (precio < 0)
+                throw new ArgumentException("El precio no puede ser negativo.", nameof(precio));
+            if (precio > 10_000_000)
+                throw new ArgumentException("El precio no puede superar los $ 10.000.000.", nameof(precio));
+            Precio = decimal.Round(precio, 2);
+        }
+
+        public void SetCategoria(CategoriaProducto categoria)
+        {
+            if (!Enum.IsDefined(typeof(CategoriaProducto), categoria))
+                throw new ArgumentException("La categoría indicada no es válida.", nameof(categoria));
+            Categoria = categoria;
         }
 
         public void DescontarStock(int cantidad)

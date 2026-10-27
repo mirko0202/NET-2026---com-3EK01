@@ -1,0 +1,255 @@
+@page "/ingresos"
+@inherits PaginaAutenticada
+@inject IJSRuntime JS
+
+<PageTitle>Ingresos de mercadería - Gestión de Stock</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">
+        Ingresos de mercadería
+        @if (!EsAdministrador)
+        {
+            <small class="text-muted fs-6">(solo consulta)</small>
+        }
+    </h3>
+    @if (EsAdministrador)
+    {
+        <button class="btn btn-primary" @onclick="() => modal.MostrarAlta()">Registrar ingreso</button>
+    }
+</div>
+
+@if (!string.IsNullOrEmpty(mensajeExito))
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        @mensajeExito
+        <button type="button" class="btn-close" @onclick="() => mensajeExito = null"></button>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(mensajeError))
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        @mensajeError
+        <button type="button" class="btn-close" @onclick="() => mensajeError = null"></button>
+    </div>
+}
+
+<div class="card mb-3">
+    <div class="card-body">
+        <h6 class="card-subtitle mb-2 text-muted">Historial de ingresos</h6>
+        <div class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small mb-1" for="filtroProducto">Producto</label>
+                <select id="filtroProducto" class="form-select" @bind="productoId" @bind:after="BuscarAsync">
+                    <option value="0">Todos</option>
+                    @foreach (var producto in productos)
+                    {
+                        <option value="@producto.Id">@producto.Nombre</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small mb-1" for="filtroDesde">Desde</label>
+                <input id="filtroDesde" type="date" class="form-control" @bind="desde" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small mb-1" for="filtroHasta">Hasta</label>
+                <input id="filtroHasta" type="date" class="form-control" @bind="hasta" />
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-outline-primary" @onclick="BuscarAsync">Buscar</button>
+                <button class="btn btn-outline-secondary" @onclick="LimpiarAsync">Limpiar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (cargando)
+{
+    <div class="d-flex justify-content-center my-4">
+        <div class="spinner-border" role="status"><span class="visually-hidden">Cargando...</span></div>
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover table-sm align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>N°</th>
+                    <th>Fecha</th>
+                    <th>Producto</th>
+                    <th class="text-end">Cantidad</th>
+                    <th>Sucursal</th>
+                    <th>Proveedor</th>
+                    <th>Comprobante</th>
+                    <th>Registró</th>
+                    @if (EsAdministrador)
+                    {
+                        <th></th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var ingreso in ingresos)
+                {
+                    <tr>
+                        <td>@ingreso.Id</td>
+                        <td class="text-nowrap">@ingreso.FechaHora.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>@ingreso.ProductoNombre</td>
+                        <td class="text-end text-nowrap">@ingreso.Cantidad.ToString("N0") @ingreso.Unidad</td>
+                        <td>@ingreso.SucursalNombre</td>
+                        <td>@ingreso.Proveedor</td>
+                        <td>@ingreso.Comprobante</td>
+                        <td>@ingreso.UsuarioNombre</td>
+                        @if (EsAdministrador)
+                        {
+                            <td class="text-end text-nowrap">
+                                <button class="btn btn-sm btn-outline-primary me-1" @onclick="() => EditarAsync(ingreso)">Editar</button>
+                                <button class="btn btn-sm btn-outline-danger" @onclick="() => EliminarAsync(ingreso)">Eliminar</button>
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <p class="text-muted">
+        @(ingresos.Count == 1 ? "1 ingreso" : $"{ingresos.Count} ingresos") · @ingresos.Sum(i => i.Cantidad).ToString("N0") unidades
+    </p>
+}
+
+<IngresoModal @ref="modal" Productos="productos" Sucursales="sucursales" Proveedores="proveedores" OnGuardado="AlGuardarAsync" />
+
+@code {
+    private List<IngresoProductoDTO> ingresos = new();
+    private List<ProductoDTO> productos = new();
+    private List<SucursalDTO> sucursales = new();
+    private List<string> proveedores = new();
+    private IngresoModal modal = default!;
+    private int productoId;
+    private DateTime? desde;
+    private DateTime? hasta;
+    private bool cargando = true;
+    private string? mensajeExito;
+    private string? mensajeError;
+
+    protected override async Task OnAutenticadoAsync()
+    {
+        try
+        {
+            productos = (await ProductoApiClient.GetAllAsync()).OrderBy(p => p.Nombre).ToList();
+
+            if (EsAdministrador)
+                sucursales = (await SucursalApiClient.GetAllAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            mensajeError = MensajeDeError(ex);
+        }
+
+        await BuscarAsync();
+    }
+
+    private async Task BuscarAsync()
+    {
+        if (desde > hasta)
+        {
+            mensajeError = "La fecha desde no puede ser posterior a la fecha hasta.";
+            return;
+        }
+
+        try
+        {
+            cargando = true;
+            mensajeError = null;
+
+            int? filtroProducto = productoId > 0 ? productoId : null;
+            ingresos = (await IngresoProductoApiClient.GetAllAsync(filtroProducto, desde, hasta)).ToList();
+
+            if (filtroProducto == null && desde == null && hasta == null)
+            {
+                proveedores = ingresos.Select(i => i.Proveedor)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(p => p)
+                    .ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            mensajeError = MensajeDeError(ex);
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private async Task LimpiarAsync()
+    {
+        productoId = 0;
+        desde = null;
+        hasta = null;
+        await BuscarAsync();
+    }
+
+    private async Task EditarAsync(IngresoProductoDTO seleccionado)
+    {
+        try
+        {
+            mensajeError = null;
+            mensajeExito = null;
+            var ingreso = await IngresoProductoApiClient.GetAsync(seleccionado.Id);
+            modal.MostrarEdicion(ingreso);
+        }
+        catch (Exception ex)
+        {
+            mensajeError = MensajeDeError(ex);
+        }
+    }
+
+    private async Task EliminarAsync(IngresoProductoDTO ingreso)
+    {
+        var confirmar = await JS.InvokeAsync<bool>("confirm",
+            $"¿Eliminar el ingreso N° {ingreso.Id} ({ingreso.Cantidad} {ingreso.Unidad} de \"{ingreso.ProductoNombre}\")? " +
+            "Se descontará esa cantidad del stock actual del producto.");
+
+        if (!confirmar)
+            return;
+
+        try
+        {
+            mensajeError = null;
+            mensajeExito = null;
+            await IngresoProductoApiClient.DeleteAsync(ingreso.Id);
+            mensajeExito = $"Ingreso N° {ingreso.Id} eliminado.";
+            await RecargarProductosAsync();
+            await BuscarAsync();
+        }
+        catch (Exception ex)
+        {
+            mensajeError = MensajeDeError(ex);
+        }
+    }
+
+    private async Task AlGuardarAsync(string mensaje)
+    {
+        mensajeError = null;
+        mensajeExito = mensaje;
+        await RecargarProductosAsync();
+        await BuscarAsync();
+    }
+
+    private async Task RecargarProductosAsync()
+    {
+        try
+        {
+            productos = (await ProductoApiClient.GetAllAsync()).OrderBy(p => p.Nombre).ToList();
+        }
+        catch (Exception ex)
+        {
+            mensajeError = MensajeDeError(ex);
+        }
+    }
+}

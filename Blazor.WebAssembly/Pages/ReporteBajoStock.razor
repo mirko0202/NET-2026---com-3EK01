@@ -1,0 +1,153 @@
+@page "/reportes/bajo-stock"
+@inherits PaginaAutenticada
+@inject IJSRuntime JS
+
+<PageTitle>Reporte de stock bajo el mínimo - Gestión de Stock</PageTitle>
+
+@if (Usuario != null && !EsAdministrador)
+{
+    <div class="alert alert-warning">Los reportes son exclusivos para administradores.</div>
+}
+else
+{
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="mb-0">Reporte de stock bajo el mínimo</h3>
+        <div>
+            <button class="btn btn-outline-primary" @onclick="GenerarAsync" disabled="@ocupado">Actualizar</button>
+            <button class="btn btn-outline-secondary" @onclick="ExportarAsync" disabled="@(ocupado || reporte == null)">
+                @if (exportando)
+                {
+                    <span class="spinner-border spinner-border-sm me-1"></span>
+                }
+                Exportar PDF
+            </button>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(mensajeError))
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            @mensajeError
+            <button type="button" class="btn-close" @onclick="() => mensajeError = null"></button>
+        </div>
+    }
+
+    @if (reporte == null)
+    {
+        <div class="d-flex justify-content-center my-4">
+            <div class="spinner-border" role="status"><span class="visually-hidden">Cargando...</span></div>
+        </div>
+    }
+    else
+    {
+        <p class="text-muted">
+            Productos e ingredientes con stock igual o inferior al mínimo · situación al @reporte.GeneradoEl.ToString("dd/MM/yyyy HH:mm")
+        </p>
+
+        <div class="row g-3 mb-3">
+            <div class="col-6 col-lg-3">
+                <div class="card h-100 border-danger"><div class="card-body py-2">
+                    <div class="text-muted small">Productos bajo el mínimo</div>
+                    <div class="fs-4 fw-bold text-danger">@reporte.CantidadProductos</div>
+                </div></div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="card h-100 border-danger"><div class="card-body py-2">
+                    <div class="text-muted small">Ingredientes bajo el mínimo</div>
+                    <div class="fs-4 fw-bold text-danger">@reporte.CantidadIngredientes</div>
+                </div></div>
+            </div>
+        </div>
+
+        @if (reporte.Items.Count == 0)
+        {
+            <div class="alert alert-success">No hay productos ni ingredientes por debajo del stock mínimo.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Tipo</th>
+                            <th>Nombre</th>
+                            <th>Categoría</th>
+                            <th>Unidad</th>
+                            <th class="text-end">Stock</th>
+                            <th class="text-end">Mínimo</th>
+                            <th class="text-end">Faltante</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in reporte.Items)
+                        {
+                            <tr>
+                                <td><span class="badge @(item.Tipo == "Producto" ? "bg-primary" : "bg-secondary")">@item.Tipo</span></td>
+                                <td>@item.Nombre</td>
+                                <td>@(item.Categoria ?? "-")</td>
+                                <td>@(item.Unidad ?? "-")</td>
+                                <td class="text-end">@item.Stock.ToString("N0")</td>
+                                <td class="text-end">@item.StockMin.ToString("N0")</td>
+                                <td class="text-end fw-bold text-danger">@item.Faltante.ToString("N0")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <p class="text-muted small">Faltante: unidades necesarias para volver al stock mínimo.</p>
+        }
+    }
+}
+
+@code {
+    private ReporteBajoStockDTO? reporte;
+    private bool ocupado;
+    private bool exportando;
+    private string? mensajeError;
+
+    protected override async Task OnAutenticadoAsync()
+    {
+        if (EsAdministrador)
+            await GenerarAsync();
+    }
+
+    private async Task GenerarAsync()
+    {
+        try
+        {
+            ocupado = true;
+            mensajeError = null;
+            reporte = await ReporteApiClient.GetBajoStockAsync();
+        }
+        catch (Exception ex)
+        {
+            mensajeError = MensajeDeError(ex);
+        }
+        finally
+        {
+            ocupado = false;
+        }
+    }
+
+    private async Task ExportarAsync()
+    {
+        try
+        {
+            ocupado = true;
+            exportando = true;
+            mensajeError = null;
+
+            var pdf = await ReporteApiClient.GetBajoStockPdfAsync();
+            await Descargas.DescargarPdfAsync(JS, $"bajo_stock_{DateTime.Now:yyyyMMdd}.pdf", pdf);
+        }
+        catch (Exception ex)
+        {
+            mensajeError = MensajeDeError(ex);
+        }
+        finally
+        {
+            ocupado = false;
+            exportando = false;
+        }
+    }
+}

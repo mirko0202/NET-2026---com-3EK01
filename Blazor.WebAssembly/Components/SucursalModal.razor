@@ -1,0 +1,187 @@
+@inject NavigationManager Navigation
+
+@if (visible)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" style="background-color: rgba(0,0,0,.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <EditForm Model="sucursal" OnSubmit="GuardarAsync">
+                    <div class="modal-header">
+                        <h5 class="modal-title">@(modo == FormMode.Add ? "Nueva sucursal" : "Modificar sucursal")</h5>
+                        <button type="button" class="btn-close" @onclick="Cerrar" disabled="@guardando"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        @if (modo == FormMode.Update)
+                        {
+                            <div class="mb-3">
+                                <label class="form-label">Id</label>
+                                <input class="form-control" value="@sucursal.Id" readonly />
+                            </div>
+                        }
+
+                        <div class="mb-3">
+                            <label class="form-label" for="nombre">Nombre *</label>
+                            <InputText id="nombre" class="@ClaseCampo("Nombre")" @bind-Value="sucursal.Nombre" maxlength="100" />
+                            <div class="invalid-feedback">@Error("Nombre")</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="direccion">Dirección</label>
+                            <InputText id="direccion" class="@ClaseCampo("Direccion")" @bind-Value="sucursal.Direccion" maxlength="150" />
+                            <div class="invalid-feedback">@Error("Direccion")</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="telefono">Teléfono</label>
+                            <InputText id="telefono" class="@ClaseCampo("Telefono")" @bind-Value="sucursal.Telefono" maxlength="30" />
+                            <div class="invalid-feedback">@Error("Telefono")</div>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <InputCheckbox id="activa" class="form-check-input" @bind-Value="sucursal.Activa" />
+                            <label class="form-check-label" for="activa">Sucursal activa (habilitada para ventas e ingresos)</label>
+                        </div>
+
+                        @if (modo == FormMode.Update && estabaActiva && !sucursal.Activa)
+                        {
+                            <div class="alert alert-info py-2">Una sucursal inactiva no puede registrar ventas ni ingresos de mercadería.</div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(errorServidor))
+                        {
+                            <div class="alert alert-warning mb-0">@errorServidor</div>
+                        }
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="Cerrar" disabled="@guardando">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" disabled="@guardando">
+                            @if (guardando)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2"></span>
+                            }
+                            Guardar
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public EventCallback<string> OnGuardado { get; set; }
+
+    private bool visible;
+    private bool guardando;
+    private bool estabaActiva;
+    private FormMode modo;
+    private SucursalDTO sucursal = new();
+    private string? errorServidor;
+    private readonly Dictionary<string, string> errores = new();
+
+    public void MostrarAlta()
+    {
+        modo = FormMode.Add;
+        sucursal = new SucursalDTO { Activa = true };
+        Abrir();
+    }
+
+    public void MostrarEdicion(SucursalDTO existente)
+    {
+        modo = FormMode.Update;
+        sucursal = new SucursalDTO
+        {
+            Id = existente.Id,
+            Nombre = existente.Nombre,
+            Direccion = existente.Direccion,
+            Telefono = existente.Telefono,
+            Activa = existente.Activa
+        };
+        Abrir();
+    }
+
+    private void Abrir()
+    {
+        estabaActiva = sucursal.Activa;
+        errores.Clear();
+        errorServidor = null;
+        visible = true;
+        StateHasChanged();
+    }
+
+    private void Cerrar()
+    {
+        visible = false;
+    }
+
+    private string ClaseCampo(string campo) =>
+        errores.ContainsKey(campo) ? "form-control is-invalid" : "form-control";
+
+    private string? Error(string campo) =>
+        errores.TryGetValue(campo, out var mensaje) ? mensaje : null;
+
+    private bool Validar()
+    {
+        errores.Clear();
+
+        if (string.IsNullOrWhiteSpace(sucursal.Nombre))
+            errores["Nombre"] = "El nombre es requerido";
+        else if (sucursal.Nombre.Trim().Length > 100)
+            errores["Nombre"] = "El nombre no puede superar los 100 caracteres";
+
+        if (sucursal.Direccion?.Trim().Length > 150)
+            errores["Direccion"] = "La dirección no puede superar los 150 caracteres";
+
+        var telefono = sucursal.Telefono?.Trim() ?? string.Empty;
+        if (telefono.Length > 30)
+            errores["Telefono"] = "El teléfono no puede superar los 30 caracteres";
+        else if (telefono.Any(c => !char.IsDigit(c) && " -+()".IndexOf(c) < 0))
+            errores["Telefono"] = "El teléfono solo puede contener números, espacios, guiones, + y paréntesis";
+
+        return errores.Count == 0;
+    }
+
+    private async Task GuardarAsync()
+    {
+        errorServidor = null;
+
+        if (!Validar())
+            return;
+
+        sucursal.Nombre = sucursal.Nombre.Trim();
+        sucursal.Direccion = string.IsNullOrWhiteSpace(sucursal.Direccion) ? null : sucursal.Direccion.Trim();
+        sucursal.Telefono = string.IsNullOrWhiteSpace(sucursal.Telefono) ? null : sucursal.Telefono.Trim();
+
+        try
+        {
+            guardando = true;
+
+            if (modo == FormMode.Update)
+                await SucursalApiClient.UpdateAsync(sucursal);
+            else
+                await SucursalApiClient.AddAsync(sucursal);
+
+            visible = false;
+
+            await OnGuardado.InvokeAsync(modo == FormMode.Add
+                ? $"Sucursal \"{sucursal.Nombre}\" creada correctamente."
+                : $"Sucursal \"{sucursal.Nombre}\" actualizada correctamente.");
+        }
+        catch (UnauthorizedAccessException)
+        {
+            visible = false;
+            Navigation.NavigateTo("login?expirada=true");
+        }
+        catch (Exception ex)
+        {
+            errorServidor = ex.Message;
+        }
+        finally
+        {
+            guardando = false;
+        }
+    }
+}

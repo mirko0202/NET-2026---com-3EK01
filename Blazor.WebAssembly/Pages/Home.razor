@@ -11,11 +11,16 @@
     <div class="alert alert-light border">
         @if (EsAdministrador)
         {
-            <text><strong>Perfil Administrador:</strong> consulta y modifica productos e ingredientes.</text>
+            <text><strong>Perfil Administrador:</strong> gestiona productos, ingredientes, ventas, ingresos de mercadería,
+            sucursales y usuarios, y consulta los reportes.</text>
         }
         else
         {
-            <text><strong>Perfil Empleado:</strong> consulta el stock de productos e ingredientes.</text>
+            <text><strong>Perfil Empleado:</strong> consulta el stock y el historial de ingresos, y registra ventas.</text>
+        }
+        @if (!string.IsNullOrEmpty(Usuario.SucursalNombre))
+        {
+            <span class="text-muted"> Sucursal: @Usuario.SucursalNombre.</span>
         }
     </div>
 
@@ -25,39 +30,51 @@
     }
 
     <div class="row g-3">
-        <div class="col-md-6">
+        <div class="col-md-6 col-xl-3">
             <div class="card h-100">
                 <div class="card-body">
                     <h5 class="card-title">Productos</h5>
                     <p class="card-text text-muted">
-                        @if (productosBajoStock == null)
-                        {
-                            <text>Cargando...</text>
-                        }
-                        else
-                        {
-                            <text>@productosBajoStock de @productosTotales por debajo del stock mínimo.</text>
-                        }
+                        @(productosBajoStock == null ? "Cargando..." : $"{productosBajoStock} de {productosTotales} por debajo del stock mínimo.")
                     </p>
                     <a class="btn btn-primary" href="productos">Ver productos</a>
                 </div>
             </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-6 col-xl-3">
             <div class="card h-100">
                 <div class="card-body">
                     <h5 class="card-title">Ingredientes</h5>
                     <p class="card-text text-muted">
-                        @if (ingredientesBajoStock == null)
-                        {
-                            <text>Cargando...</text>
-                        }
-                        else
-                        {
-                            <text>@ingredientesBajoStock de @ingredientesTotales por debajo del stock mínimo.</text>
-                        }
+                        @(ingredientesBajoStock == null ? "Cargando..." : $"{ingredientesBajoStock} de {ingredientesTotales} por debajo del stock mínimo.")
                     </p>
                     <a class="btn btn-primary" href="ingredientes">Ver ingredientes</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Ventas</h5>
+                    <p class="card-text text-muted">
+                        @(ventasDelMes == null ? "Cargando..." : $"{ventasDelMes} ventas este mes por {totalDelMes:C0}.")
+                    </p>
+                    <a class="btn btn-primary" href="ventas">Ver ventas</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">@(EsAdministrador ? "Reportes" : "Ingresos de mercadería")</h5>
+                    <p class="card-text text-muted">
+                        @(EsAdministrador
+                            ? "Ventas por período y sucursal con gráfico, y stock bajo el mínimo, con exportación a PDF."
+                            : "Historial de reposiciones de mercadería por producto y período.")
+                    </p>
+                    <a class="btn btn-primary" href="@(EsAdministrador ? "reportes/ventas" : "ingresos")">
+                        @(EsAdministrador ? "Ver reportes" : "Ver ingresos")
+                    </a>
                 </div>
             </div>
         </div>
@@ -69,6 +86,8 @@
     private int? productosBajoStock;
     private int? ingredientesTotales;
     private int? ingredientesBajoStock;
+    private int? ventasDelMes;
+    private decimal totalDelMes;
     private string? error;
 
     protected override async Task OnAutenticadoAsync()
@@ -82,6 +101,11 @@
             var ingredientes = (await IngredienteApiClient.GetAllAsync()).ToList();
             ingredientesTotales = ingredientes.Count;
             ingredientesBajoStock = ingredientes.Count(i => i.BajoStock);
+
+            var inicioDelMes = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+            var ventas = (await VentaApiClient.GetAllAsync()).Where(v => v.FechaHora >= inicioDelMes).ToList();
+            ventasDelMes = ventas.Count;
+            totalDelMes = ventas.Sum(v => v.Total);
         }
         catch (Exception ex)
         {

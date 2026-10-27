@@ -11,11 +11,13 @@ namespace Domain.Model
         public string Salt { get; private set; } = string.Empty;
         public RolUsuario Rol { get; private set; }
         public bool Activo { get; private set; }
+        public int? SucursalId { get; private set; }
+        public Sucursal? Sucursal { get; private set; }
 
         public bool EsAdministrador => Rol == RolUsuario.Administrador;
 
         public Usuario(int id, string username, string nombreCompleto,
-                       string password, RolUsuario rol, bool activo = true)
+                       string password, RolUsuario rol, bool activo = true, int? sucursalId = null)
         {
             SetId(id);
             SetUsername(username);
@@ -23,6 +25,7 @@ namespace Domain.Model
             SetPassword(password);
             SetRol(rol);
             SetActivo(activo);
+            SetSucursalId(sucursalId);
         }
 
         private Usuario() { }
@@ -73,6 +76,13 @@ namespace Domain.Model
         }
 
         public void SetActivo(bool activo) => Activo = activo;
+
+        public void SetSucursalId(int? sucursalId)
+        {
+            if (sucursalId.HasValue && sucursalId.Value <= 0)
+                throw new ArgumentException("La sucursal indicada no es válida.", nameof(sucursalId));
+            SucursalId = sucursalId;
+        }
 
         public bool ValidarPassword(string password)
         {

@@ -6,8 +6,13 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using System.Globalization;
 
 var cultura = new CultureInfo("es-AR");
+cultura.NumberFormat.CurrencySymbol = "$";
+cultura.NumberFormat.CurrencyPositivePattern = 2;
+cultura.NumberFormat.CurrencyNegativePattern = 9;
 CultureInfo.DefaultThreadCurrentCulture = cultura;
 CultureInfo.DefaultThreadCurrentUICulture = cultura;
+CultureInfo.CurrentCulture = cultura;
+CultureInfo.CurrentUICulture = cultura;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");

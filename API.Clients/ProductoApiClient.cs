@@ -47,7 +47,7 @@ namespace API.Clients
             }
         }
 
-        public static async Task<IEnumerable<ProductoDTO>> GetByCriteriaAsync(string? texto, bool bajoStock)
+        public static async Task<IEnumerable<ProductoDTO>> GetByCriteriaAsync(string? texto, bool bajoStock, int? categoria = null)
         {
             try
             {
@@ -56,6 +56,8 @@ namespace API.Clients
                 var query = $"productos/criteria?bajoStock={(bajoStock ? "true" : "false")}";
                 if (!string.IsNullOrWhiteSpace(texto))
                     query += $"&texto={Uri.EscapeDataString(texto)}";
+                if (categoria.HasValue)
+                    query += $"&categoria={categoria.Value}";
 
                 var response = await client.GetAsync(query);
                 await VerificarRespuestaAsync(response);
@@ -70,6 +72,27 @@ namespace API.Clients
             catch (TaskCanceledException ex)
             {
                 throw ErrorDeConexion("buscar productos", ex);
+            }
+        }
+
+        public static async Task<IEnumerable<CategoriaDTO>> GetCategoriasAsync()
+        {
+            try
+            {
+                using var client = await CreateAuthenticatedHttpClientAsync();
+                var response = await client.GetAsync("productos/categorias");
+                await VerificarRespuestaAsync(response);
+
+                return await response.Content.ReadFromJsonAsync<IEnumerable<CategoriaDTO>>()
+                       ?? new List<CategoriaDTO>();
+            }
+            catch (HttpRequestException ex)
+            {
+                throw ErrorDeConexion("obtener las categorías", ex);
+            }
+            catch (TaskCanceledException ex)
+            {
+                throw ErrorDeConexion("obtener las categorías", ex);
             }
         }
 

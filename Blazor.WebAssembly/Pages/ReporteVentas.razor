@@ -1,0 +1,290 @@
+@page "/reportes/ventas"
+@inherits PaginaAutenticada
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+<PageTitle>Reporte de ventas - Gestión de Stock</PageTitle>
+
+@if (Usuario != null && !EsAdministrador)
+{
+    <div class="alert alert-warning">Los reportes son exclusivos para administradores.</div>
+}
+else
+{
+    <h3 class="mb-3">Reporte de ventas por período y sucursal</h3>
+
+    @if (!string.IsNullOrEmpty(mensajeError))
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            @mensajeError
+            <button type="button" class="btn-close" @onclick="() => mensajeError = null"></button>
+        </div>
+    }
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-2">
+                    <label class="form-label small mb-1" for="desde">Desde</label>
+                    <input id="desde" type="date" class="form-control" @bind="desde" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small mb-1" for="hasta">Hasta</label>
+                    <input id="hasta" type="date" class="form-control" @bind="hasta" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small mb-1" for="sucursal">Sucursal</label>
+                    <select id="sucursal" class="form-select" @bind="sucursalId">
+                        <option value="0">Todas las sucursales</option>
+                        @foreach (var sucursal in sucursales)
+                        {
+                            <option value="@sucursal.Id">@sucursal.Nombre</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-primary" @onclick="GenerarAsync" disabled="@ocupado">Generar</button>
+                    <button class="btn btn-outline-secondary" @onclick="ExportarAsync" disabled="@(ocupado || reporte == null)">
+                        @if (exportando)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                        }
+                        Exportar PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (reporte != null)
+    {
+        <div class="row g-3 mb-3">
+            <div class="col-6 col-lg-3">
+                <div class="card h-100"><div class="card-body py-2">
+                    <div class="text-muted small">Ventas</div>
+                    <div class="fs-4 fw-bold">@reporte.CantidadVentas.ToString("N0")</div>
+                </div></div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="card h-100"><div class="card-body py-2">
+                    <div class="text-muted small">Unidades vendidas</div>
+                    <div class="fs-4 fw-bold">@reporte.Unidades.ToString("N0")</div>
+                </div></div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="card h-100"><div class="card-body py-2">
+                    <div class="text-muted small">Total facturado</div>
+                    <div class="fs-4 fw-bold">@reporte.Total.ToString("C2")</div>
+                </div></div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="card h-100"><div class="card-body py-2">
+                    <div class="text-muted small">Ticket promedio</div>
+                    <div class="fs-4 fw-bold">@reporte.TicketPromedio.ToString("C2")</div>
+                </div></div>
+            </div>
+        </div>
+    }
+
+    <div class="card mb-3 @(reporte == null ? "d-none" : null)">
+        <div class="card-body">
+            <div class="contenedor-grafico">
+                <canvas id="graficoVentas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    @if (reporte != null)
+    {
+        <div class="row g-3">
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header fw-bold">Ventas por sucursal</div>
+                    <table class="table table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>Sucursal</th>
+                                <th class="text-end">Ventas</th>
+                                <th class="text-end">Unidades</th>
+                                <th class="text-end">Total</th>
+                                <th class="text-end">%</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var sucursal in reporte.PorSucursal)
+                            {
+                                <tr>
+                                    <td>@sucursal.SucursalNombre</td>
+                                    <td class="text-end">@sucursal.CantidadVentas</td>
+                                    <td class="text-end">@sucursal.Unidades.ToString("N0")</td>
+                                    <td class="text-end text-nowrap">@sucursal.Total.ToString("C2")</td>
+                                    <td class="text-end">@((reporte.Total == 0 ? 0 : sucursal.Total / reporte.Total).ToString("P1"))</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header fw-bold">Productos más vendidos</div>
+                    <table class="table table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Producto</th>
+                                <th class="text-end">Unidades</th>
+                                <th class="text-end">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var (producto, indice) in reporte.ProductosMasVendidos.Select((p, i) => (p, i)))
+                            {
+                                <tr>
+                                    <td>@(indice + 1)</td>
+                                    <td>@producto.ProductoNombre</td>
+                                    <td class="text-end">@producto.Unidades.ToString("N0")</td>
+                                    <td class="text-end text-nowrap">@producto.Total.ToString("C2")</td>
+                                </tr>
+                            }
+                            @if (reporte.ProductosMasVendidos.Count == 0)
+                            {
+                                <tr><td colspan="4" class="text-muted">No se registraron ventas en el período.</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    private static readonly string[] colores = { "#1F4E79", "#2E86C1", "#85C1E9", "#117A65", "#B9770E", "#7D3C98" };
+
+    private List<SucursalDTO> sucursales = new();
+    private ReporteVentasDTO? reporte;
+    private DateTime desde = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddMonths(-2);
+    private DateTime hasta = DateTime.Today;
+    private int sucursalId;
+    private bool ocupado;
+    private bool exportando;
+    private bool dibujarPendiente;
+    private string? mensajeError;
+
+    protected override async Task OnAutenticadoAsync()
+    {
+        if (!EsAdministrador)
+            return;
+
+        try
+        {
+            sucursales = (await SucursalApiClient.GetAllAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            mensajeError = MensajeDeError(ex);
+        }
+
+        await GenerarAsync();
+    }
+
+    private int? SucursalSeleccionada => sucursalId > 0 ? sucursalId : null;
+
+    private bool PeriodoValido()
+    {
+        if (desde.Date <= hasta.Date)
+            return true;
+
+        mensajeError = "La fecha desde no puede ser posterior a la fecha hasta.";
+        return false;
+    }
+
+    private async Task GenerarAsync()
+    {
+        if (!PeriodoValido())
+            return;
+
+        try
+        {
+            ocupado = true;
+            mensajeError = null;
+            reporte = await ReporteApiClient.GetVentasAsync(desde, hasta, SucursalSeleccionada);
+            dibujarPendiente = true;
+        }
+        catch (Exception ex)
+        {
+            mensajeError = MensajeDeError(ex);
+        }
+        finally
+        {
+            ocupado = false;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!dibujarPendiente || reporte == null)
+            return;
+
+        dibujarPendiente = false;
+
+        var meses = reporte.PorMes
+            .Select(m => new { m.Anio, m.Mes, m.Periodo })
+            .Distinct()
+            .OrderBy(m => m.Anio).ThenBy(m => m.Mes)
+            .ToList();
+
+        var series = reporte.PorSucursal
+            .Select((s, indice) => new
+            {
+                nombre = s.SucursalNombre,
+                color = colores[indice % colores.Length],
+                valores = meses
+                    .Select(m => reporte.PorMes
+                        .Where(x => x.Anio == m.Anio && x.Mes == m.Mes && x.SucursalId == s.SucursalId)
+                        .Sum(x => x.Total))
+                    .ToArray()
+            })
+            .ToArray();
+
+        await JS.InvokeVoidAsync("tpi.dibujarGraficoBarras", "graficoVentas", "Ventas por mes y sucursal",
+            meses.Select(m => m.Periodo).ToArray(), series);
+    }
+
+    private async Task ExportarAsync()
+    {
+        if (!PeriodoValido())
+            return;
+
+        try
+        {
+            ocupado = true;
+            exportando = true;
+            mensajeError = null;
+
+            var pdf = await ReporteApiClient.GetVentasPdfAsync(desde, hasta, SucursalSeleccionada);
+            await Descargas.DescargarPdfAsync(JS, $"ventas_{desde:yyyyMMdd}_{hasta:yyyyMMdd}.pdf", pdf);
+        }
+        catch (Exception ex)
+        {
+            mensajeError = MensajeDeError(ex);
+        }
+        finally
+        {
+            ocupado = false;
+            exportando = false;
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("tpi.destruirGrafico", "graficoVentas");
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+    }
+}

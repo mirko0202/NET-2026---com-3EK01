@@ -28,15 +28,32 @@ namespace WebAPI
             .RequireAuthorization()
             .WithOpenApi();
 
-            app.MapGet("/productos/criteria", async (string? texto, bool? bajoStock,
+            app.MapGet("/productos/criteria", async (string? texto, bool? bajoStock, int? categoria,
                                                      IProductoService service) =>
             {
-                var criteria = new ProductoCriteriaDTO { Texto = texto, BajoStock = bajoStock };
-                var dtos = await service.GetByCriteriaAsync(criteria);
-                return Results.Ok(dtos);
+                try
+                {
+                    var criteria = new ProductoCriteriaDTO { Texto = texto, BajoStock = bajoStock, Categoria = categoria };
+                    var dtos = await service.GetByCriteriaAsync(criteria);
+                    return Results.Ok(dtos);
+                }
+                catch (ArgumentException ex)
+                {
+                    return Errores.BadRequest(ex);
+                }
             })
             .WithName("GetProductosByCriteria")
             .Produces<List<ProductoDTO>>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
+            .RequireAuthorization()
+            .WithOpenApi();
+
+            app.MapGet("/productos/categorias", (IProductoService service) =>
+            {
+                return Results.Ok(service.GetCategorias());
+            })
+            .WithName("GetCategoriasProducto")
+            .Produces<List<CategoriaDTO>>(StatusCodes.Status200OK)
             .RequireAuthorization()
             .WithOpenApi();
 

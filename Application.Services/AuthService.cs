@@ -44,14 +44,7 @@ namespace Application.Services
                 Mensaje = "Autenticación exitosa.",
                 Token = GenerarToken(usuario, expiracion),
                 Expiracion = expiracion,
-                Usuario = new UsuarioDTO
-                {
-                    Id = usuario.Id,
-                    Username = usuario.Username,
-                    NombreCompleto = usuario.NombreCompleto,
-                    Rol = usuario.Rol.ToString(),
-                    EsAdministrador = usuario.EsAdministrador
-                }
+                Usuario = Mapeos.ToDTO(usuario)
             };
         }
 

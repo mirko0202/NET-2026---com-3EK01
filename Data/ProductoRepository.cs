@@ -28,12 +28,13 @@ namespace Data
         public async Task<IEnumerable<Producto>> GetByCriteriaAsync(ProductoCriteria criteria)
         {
             const string sql = @"
-                SELECT Id, Nombre, Descripcion, Unidad, Stock, StockMin
+                SELECT Id, Nombre, Descripcion, Unidad, Stock, StockMin, Precio, Categoria
                 FROM Productos
                 WHERE (@Texto IS NULL
                        OR Nombre LIKE @Texto
                        OR ISNULL(Descripcion, '') LIKE @Texto)
                   AND (@BajoStock = 0 OR Stock <= StockMin)
+                  AND (@Categoria IS NULL OR Categoria = @Categoria)
                 ORDER BY Nombre";
 
             var productos = new List<Producto>();
@@ -48,6 +49,11 @@ namespace Data
 
             command.Parameters.AddWithValue("@BajoStock", criteria.BajoStock == true);
 
+            command.Parameters.AddWithValue("@Categoria",
+                criteria.Categoria.HasValue
+                    ? (int)criteria.Categoria.Value
+                    : DBNull.Value);
+
             await connection.OpenAsync();
             using var reader = await command.ExecuteReaderAsync();
 
@@ -59,7 +65,9 @@ namespace Data
                     reader.IsDBNull(2) ? null : reader.GetString(2),
                     reader.IsDBNull(3) ? null : reader.GetString(3),
                     reader.GetInt32(4),
-                    reader.GetInt32(5)));
+                    reader.GetInt32(5),
+                    reader.GetDecimal(6),
+                    (CategoriaProducto)reader.GetInt32(7)));
             }
 
             return productos;
@@ -81,6 +89,8 @@ namespace Data
             existente.SetUnidad(producto.Unidad);
             existente.SetStock(producto.Stock);
             existente.SetStockMin(producto.StockMin);
+            existente.SetPrecio(producto.Precio);
+            existente.SetCategoria(producto.Categoria);
 
             await context.SaveChangesAsync();
             return true;
@@ -105,9 +115,10 @@ namespace Data
             return await query.AnyAsync();
         }
 
-        public async Task<bool> TieneVentasAsync(int id)
+        public async Task<bool> TieneMovimientosAsync(int id)
         {
-            return await context.DetallesVenta.AnyAsync(d => d.ProductoId == id);
+            return await context.DetallesVenta.AnyAsync(d => d.ProductoId == id)
+                || await context.IngresosProducto.AnyAsync(i => i.ProductoId == id);
         }
     }
 }

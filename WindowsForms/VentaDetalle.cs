@@ -124,6 +124,13 @@ namespace WindowsForms
 
                 fechaTextBox.Text = DateTime.Now.ToString("dd/MM/yyyy HH:mm");
                 vendedorTextBox.Text = usuario?.NombreCompleto;
+
+                if (usuario?.SucursalId is int sucursalId &&
+                    sucursalComboBox.DataSource is List<SucursalDTO> sucursales &&
+                    sucursales.Any(s => s.Id == sucursalId))
+                {
+                    sucursalComboBox.SelectedValue = sucursalId;
+                }
             }
             else
             {
@@ -164,7 +171,7 @@ namespace WindowsForms
 
             totalLabel.Text = unidades == 0
                 ? "Total: $ 0,00"
-                : $"{unidades} unidades   ·   Total: {total:C2}";
+                : $"{unidades} {(unidades == 1 ? "unidad" : "unidades")}   ·   Total: {total:C2}";
 
             ActualizarBotonesDeItems();
         }
@@ -196,7 +203,8 @@ namespace WindowsForms
                     p.Id,
                     p.Nombre,
                     p.Unidad,
-                    p.Stock + cantidadesOriginales.GetValueOrDefault(p.Id)))
+                    p.Stock + cantidadesOriginales.GetValueOrDefault(p.Id),
+                    p.Precio))
                 .ToList();
         }
 
